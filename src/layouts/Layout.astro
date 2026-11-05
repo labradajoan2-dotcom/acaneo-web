@@ -1,0 +1,187 @@
+---
+interface Props {
+    title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<html lang="es">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>{title}</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400;600;800&family=Fjalla+One&display=swap" rel="stylesheet">
+	</head>
+	<body>
+		<slot />
+		
+		<script>
+			// 1. Ocultar / Mostrar Header al hacer scroll
+			let lastScrollTop = 0;
+			const header = document.getElementById('main-header');
+
+			window.addEventListener('scroll', function() {
+				let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+				if (scrollTop > lastScrollTop && scrollTop > 100) {
+					header.style.transform = 'translateY(-100%)';
+				} else {
+					header.style.transform = 'translateY(0)';
+				}
+				lastScrollTop = scrollTop;
+			});
+
+			// Activar pestaña según la URL actual al cargar la página
+			window.addEventListener('DOMContentLoaded', () => {
+				const currentPath = window.location.pathname;
+				const navItems = document.querySelectorAll('.nav-item');
+
+				navItems.forEach(item => {
+					const href = item.getAttribute('href');
+					
+					// Si estamos en /contacto y el botón apunta a /contacto
+					if (currentPath === '/contacto' && href === '/contacto') {
+						navItems.forEach(i => i.classList.remove('active'));
+						item.classList.add('active');
+						updateIndicator(item);
+					}
+				});
+			});
+			// 2. Línea flotante dinámica en el menú de navegación
+			const navItems = document.querySelectorAll('.nav-item');
+			const indicator = document.getElementById('nav-indicator');
+
+			function updateIndicator(el) {
+				if (!el) return;
+				indicator.style.width = `${el.offsetWidth}px`;
+				indicator.style.left = `${el.offsetLeft}px`;
+			}
+
+			const initialActive = document.querySelector('.nav-item.active');
+			if (initialActive) {
+				updateIndicator(initialActive);
+			}
+
+			navItems.forEach(item => {
+				item.addEventListener('click', () => {
+					navItems.forEach(i => i.classList.remove('active'));
+					item.classList.add('active');
+					updateIndicator(item);
+
+					const navMenu = document.getElementById('nav-menu');
+					if (navMenu.classList.contains('mobile-open')) {
+						toggleMobileMenu();
+					}
+				});
+			});
+
+			window.addEventListener('resize', () => {
+				const activeItem = document.querySelector('.nav-item.active');
+				if (activeItem) updateIndicator(activeItem);
+			});
+
+			// 3. Lógica del Menú Hamburguesa para Móviles
+			const menuToggle = document.getElementById('menu-toggle');
+			const navMenu = document.getElementById('nav-menu');
+
+			function toggleMobileMenu() {
+				navMenu.classList.toggle('mobile-open');
+				menuToggle.classList.toggle('active');
+			}
+
+			if (menuToggle) {
+				menuToggle.addEventListener('click', toggleMobileMenu);
+			}
+
+			// 4. Funciones para los Modales
+			window.openModal = function(modalId) {
+				document.getElementById(modalId).style.display = 'flex';
+			}
+
+			window.closeModal = function(modalId) {
+				document.getElementById(modalId).style.display = 'none';
+			}
+
+			window.onclick = function(event) {
+				if (event.target.classList.contains('modal')) {
+					event.target.style.display = 'none';
+				}
+			}
+			
+						document.addEventListener('DOMContentLoaded', () => {
+				// Seleccionar todas las secciones que queremos animar
+				const sections = document.querySelectorAll('main > section');
+
+				// Añadir la clase base a cada sección
+				sections.forEach(section => {
+					section.classList.add('fade-in-section');
+				});
+
+				// Configurar el observador
+				const observer = new IntersectionObserver((entries, observer) => {
+					entries.forEach(entry => {
+						if (entry.isIntersecting) {
+							entry.target.classList.add('is-visible');
+							// Dejar de observar la sección una vez revelada
+							observer.unobserve(entry.target);
+						}
+					});
+				}, {
+					threshold: 0.10 // Se activa cuando el 15% de la sección entra en pantalla
+				});
+
+				// Iniciar el observador en cada sección
+				sections.forEach(section => {
+					observer.observe(section);
+				});
+			});
+
+		</script>
+
+			<style is:global>
+			:root {
+				--bg-color: hsl(0, 0%, 98%);
+				--surface-color: #16161d;
+				--accent-color: #ff3366;
+				--text-main: #ffffff;
+				--text-muted: #a0a0b0;
+				--font-title: 'Fjalla One', sans-serif;
+				--font-body: 'Epilogue', sans-serif;
+			}
+
+			* {
+				box-sizing: border-box;
+				margin: 0;
+				padding: 0;
+			}
+
+			html {
+				scroll-behavior: smooth;
+			}
+
+			body {
+				background-color: var(--bg-color);
+				color: var(--text-main);
+				font-family: var(--font-body);
+				line-height: 1.6;
+			}
+
+			/* Estado inicial: oculto y desplazado hacia abajo */
+		.fade-in-section {
+			opacity: 0;
+			transform: translateY(30px);
+			transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+			will-change: opacity, transform;
+		}
+
+		/* Estado final: visible y en su posición original */
+		.fade-in-section.is-visible {
+			opacity: 1;
+			transform: translateY(0);
+		}
+		</style>
+	</body>
+</html>

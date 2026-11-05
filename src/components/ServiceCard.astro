@@ -1,0 +1,89 @@
+---
+interface Props {
+	title: string;
+	image: string;
+	modalId: string;
+}
+
+const { title, image, modalId } = Astro.props;
+---
+
+<div class="servicio-card" onclick={`openModal('${modalId}')`}>
+	<img src={image} alt={title} class="servicio-bg-img" />
+	<div class="servicio-content">
+		<h3 class="servicio-card-title">{title}</h3>
+		<button class="btn-mas-info">Más información</button>
+	</div>
+</div>
+
+<style>
+	.servicio-card {
+		position: relative;
+		height: 800px;
+		border-radius: 16px;
+		overflow: hidden;
+		cursor: pointer;
+		box-shadow: 0 10px 25px rgba(0, 0, 0, 0);
+		transition: transform 0.3s ease;
+	}
+
+	.servicio-card:hover {
+		transform: translateY(-5px);
+	}
+
+	.servicio-bg-img {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		z-index: 1;
+	}
+
+	.servicio-content {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		width: 100%;
+		padding: 2.5rem;
+		z-index: 3;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 1.5rem;
+	}
+
+	.servicio-card-title {
+		font-family: var(--font-title);
+		font-size: 3rem;
+		color: #ffffff;
+		letter-spacing: 1.5px;
+		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+		line-height: 1.4;
+	}
+
+	.btn-mas-info {
+		background: transparent;
+		color: #ffffff;
+		border: 2px solid #ffffff;
+		padding: 0.6rem 1.8rem;
+		border-radius: 50px;
+		font-family: var(--font-title);
+		font-size: 0.95rem;
+		letter-spacing: 1px;
+		cursor: pointer;
+		transition: background 0.2s, color 0.2s;
+	}
+
+	.btn-mas-info:hover {
+		background: #ffffff;
+		color: #eb7443;
+	}
+
+	@media (max-width: 768px) {
+		.servicio-card {
+			height: 380px;
+		}
+	}
+</style>

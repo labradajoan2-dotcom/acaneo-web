@@ -1,0 +1,69 @@
+---
+interface Props {
+	name: string;
+	price: string;
+	image: string;
+	alt?: string;
+}
+
+const { name, price, image, alt = name } = Astro.props;
+---
+
+<div class="novedad-item">
+	<div class="product-img-container">
+		<img src={image} alt={alt} class="prod-img" />
+	</div>
+	<div class="novedad-info">
+		<span class="prod-name">{name}</span>
+		<span class="prod-price">{price}</span>
+	</div>
+</div>
+
+<style>
+	.novedad-item {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.product-img-container {
+		width: 400px;
+		height: 400px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin-bottom: 1.5rem;
+		transition: transform 0.3s ease;
+	}
+
+	.product-img-container:hover {
+		transform: scale(1.05);
+	}
+
+	.prod-img {
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		display: block;
+	}
+
+	.novedad-info {
+		display: flex;
+		justify-content: space-between;
+		width: 100%;
+		max-width: 260px;
+		padding: 0 0.5rem;
+		font-family: var(--font-title);
+		font-size: 1.15rem;
+		color: #ffffff;
+		letter-spacing: 0.5px;
+	}
+
+	.prod-name {
+		text-align: left;
+	}
+
+	.prod-price {
+		text-align: right;
+	}
+</style>

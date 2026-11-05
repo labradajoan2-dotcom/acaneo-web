@@ -1,0 +1,25 @@
+<section class="hero-section">
+    <img src="/hero-desktop.png" alt="Aldán Banner Desktop" class="hero-img desktop-img" />
+    <img src="/hero-mobile.png" alt="Aldán Banner Mobile" class="hero-img mobile-img" />
+    
+    <style>
+	.hero-section {
+		width: 100%;
+		margin-top: 70px;
+		line-height: 0;
+	}
+	.hero-img {
+		width: 100%;
+		height: auto;
+		display: block;
+		object-fit: cover;
+	}
+	.desktop-img { display: block; }
+	.mobile-img { display: none; }
+
+	@media(max-width: 768px) {
+		.desktop-img { display: none; }
+		.mobile-img { display: block; }
+	}
+</style>
+</section>

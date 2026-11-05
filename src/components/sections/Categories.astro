@@ -1,0 +1,44 @@
+---
+import CategoryCard from '../CategoryCard.astro';
+---
+
+<section id="categoria" class="categories-section">
+    <div class="categories-container">
+        <h2 class="categories-main-title">CATEGORÍAS</h2>
+        <div class="categories-grid">
+            <CategoryCard title="ROPA" image="/cat-ropa.png" href="/#ropa" rotation="left" />
+            <CategoryCard title="ACCESORIOS" image="/cat-accesorios.png" href="/#accesorios" rotation="center" />
+            <CategoryCard title="POSTERS" image="/cat-posters.png" href="/#posters" rotation="right" />
+        </div>
+    </div>
+</section>
+
+<style>
+	.categories-section {
+		background-image: url('/fondo-categorias.png');
+		background-size: cover;
+		background-position: center;
+		background-repeat: no-repeat;
+		width: 100%;
+		padding: 5rem 2rem;
+	}
+	.categories-container {
+		max-width: 1400px;
+		margin: 0 auto;
+	}
+	.categories-main-title {
+		font-family: var(--font-title);
+		font-size: 3.5rem;
+		color: #29b7ef;
+		margin-bottom: 2rem;
+		text-align: left;
+		letter-spacing: 1px;
+	}
+	.categories-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+		gap: 3rem;
+		align-items: center;
+		justify-items: center;
+	}
+</style>

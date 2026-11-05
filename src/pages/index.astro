@@ -1,0 +1,28 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Hero from '../components/sections/Hero.astro';
+import Marquee from '../components/sections/Marquee.astro';
+import Novedades from '../components/sections/Novedades.astro';
+import Categories from '../components/sections/Categories.astro';
+import Series from '../components/sections/Series.astro';
+import Services from '../components/sections/Services.astro';
+import Footer from '../components/Footer.astro';
+import Modals from '../components/Modals.astro';
+---
+
+<Layout title="Acaneo Collective | Animación, Arte y Diseño">
+	<Header currentPage="inicio" />
+
+    <main id="inicio">
+        <Hero />
+        <Marquee />
+        <Novedades />
+        <Categories />
+        <Series />
+        <Services />
+    </main>
+
+    <Footer />
+    <Modals />
+</Layout>

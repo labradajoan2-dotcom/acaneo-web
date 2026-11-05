@@ -1,0 +1,87 @@
+---
+import ServiceCard from '../ServiceCard.astro';
+---
+
+<section id="servicios" class="servicios-section">
+    <div class="servicios-container">
+        <div class="servicios-top-row">
+            <div class="servicios-header">
+                <h2 class="servicios-title">SERVICIOS</h2>
+                <div class="servicios-underline"></div>
+            </div>
+            <div class="servicios-desc">
+                <p>Desde la conceptualización hasta el renderizado final, ofrecemos una producción integral de animación que abarca la elaboración de guiones, diseño de entornos, animación, composición y todo lo necesario para pasar de una idea a un producto animado final.</p>
+            </div>
+        </div>
+
+        <div class="servicios-grid">
+            <ServiceCard 
+                title="PRODUCCIÓN DE ANIMACIÓN" 
+                image="/servicio-animacion.png" 
+                modalId="modal-animacion" 
+            />
+            <ServiceCard 
+                title="DESARROLLO DE ARTE Y DISEÑO" 
+                image="/servicio-diseno.png" 
+                modalId="modal-diseno" 
+            />
+        </div>
+    </div>
+</section>
+
+<style>
+	.servicios-section {
+		background-color: #eb7443;
+		width: 100%;
+		padding: 5rem 2rem;
+		color: #ffffff;
+	}
+	.servicios-container {
+		max-width: 1200px;
+		margin: 0 auto;
+	}
+	.servicios-top-row {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: 4rem;
+		align-items: start;
+		margin-bottom: 3.5rem;
+	}
+	.servicios-header {
+		position: relative;
+		display: inline-block;
+	}
+	.servicios-title {
+		font-family: var(--font-title);
+		font-size: clamp(2.5rem, 4vw, 3.5rem);
+		letter-spacing: 2px;
+		color: #ffffff;
+	}
+	.servicios-underline {
+		position: absolute;
+		bottom: -8px;
+		left: 0;
+		width: 100%;
+		height: 6px;
+		background: #29b7ef;
+		border-radius: 4px;
+	}
+	.servicios-desc {
+		max-width: 600px;
+		font-size: 1rem;
+		line-height: 1.6;
+		color: #ffffff;
+		justify-self: end;
+	}
+	.servicios-grid {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 2.5rem;
+	}
+
+	@media(max-width: 768px) {
+		.servicios-top-row { grid-template-columns: 1fr; gap: 1.5rem; }
+		.servicios-desc { justify-self: start; }
+		.servicios-grid { grid-template-columns: 1fr; }
+	}
+</style>

@@ -1,0 +1,178 @@
+<!-- Modal 1: Producción de Animación -->
+<div id="modal-animacion" class="modal">
+    <div class="modal-content modal-with-media">
+        <video class="modal-bg-media" autoplay loop muted playsinline>
+            <source src="/bg-animacion.mp4" type="video/mp4" />
+        </video>
+        <div class="modal-overlay"></div>
+        <button class="close-btn-box" onclick="closeModal('modal-animacion')" aria-label="Cerrar">&times;</button>
+        
+        <div class="modal-body">
+            <h3 class="modal-title">PRODUCCIÓN DE ANIMACIÓN</h3>
+            <p class="modal-subtitle">Nos encargamos de llevar tu idea a la realidad</p>
+            <ul class="modal-list">
+                <li>Producción completa en 2D o 3D, desde el concepto y guión hasta el render final</li>
+                <li>Layout, animation, color, compositing</li>
+                <li>Diseño gráfico, Motion graphics, Integración con vfx</li>
+            </ul>
+            <p class="modal-contact-text">
+                Para más información y una atención más personalizada presione <a href="#contacto" onclick="closeModal('modal-animacion')">aquí</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 2: Desarrollo de Arte y Diseño -->
+<div id="modal-diseno" class="modal">
+    <div class="modal-content modal-with-media">
+        <img src="/bg-diseno.png" alt="Arte y Diseño" class="modal-bg-media" />
+        <div class="modal-overlay"></div>
+        <button class="close-btn-box" onclick="closeModal('modal-diseno')" aria-label="Cerrar">&times;</button>
+        
+        <div class="modal-body">
+            <h3 class="modal-title">DESARROLLO DE ARTE Y DISEÑO</h3>
+            <p class="modal-subtitle">Creamos identidades visuales memorables y universos gráficos</p>
+            <ul class="modal-list">
+                <li>Concept art, diseño de personajes y entornos</li>
+                <li>Branding, identidad gráfica y creación de bibliotecas de arte</li>
+                <li>Cartelería promocional, ilustración editorial y assets 2D</li>
+            </ul>
+            <p class="modal-contact-text">
+                Para más información y una atención más personalizada presione <a href="#contacto" onclick="closeModal('modal-diseno')">aquí</a>
+            </p>
+        </div>
+    </div>
+
+
+</div>
+
+<style>
+	.modal {
+		display: none;
+		position: fixed;
+		z-index: 2000;
+		left: 0;
+		top: 0;
+		width: 100vw;
+		height: 100vh;
+		background-color: rgba(0, 0, 0, 0.5);
+		backdrop-filter: blur(10px);
+		align-items: center;
+		justify-content: center;
+		padding: 3rem;
+	}
+	.modal-content {
+		position: relative;
+		width: 95vw;
+		height: 90vh;
+		max-width: 1400px;
+		max-height: 850px;
+		border-radius: 16px;
+		overflow: hidden;
+		display: flex;
+		align-items: center;
+		box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+	}
+	.modal-bg-media {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		z-index: 1;
+	}
+	.modal-overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background: linear-gradient(90deg, rgba(11, 11, 14, 0.92) 0%, rgba(11, 11, 14, 0.75) 60%, rgba(11, 11, 14, 0.4) 100%);
+		z-index: 2;
+	}
+	.close-btn-box {
+		position: absolute;
+		top: 2rem;
+		right: 2rem;
+		width: 44px;
+		height: 44px;
+		background: rgba(11, 11, 14, 0.6);
+		border: 1px solid #ffffff;
+		border-radius: 6px;
+		color: #ffffff;
+		font-size: 1.5rem;
+		font-family: var(--font-body);
+		cursor: pointer;
+		z-index: 10;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: background 0.2s ease, transform 0.2s ease;
+	}
+	.close-btn-box:hover {
+		background: #ffffff;
+		color: #000000;
+		transform: scale(1.05);
+	}
+	.modal-body {
+		position: relative;
+		z-index: 3;
+		padding: 4rem;
+		max-width: 650px;
+		color: #ffffff;
+	}
+	.modal-title {
+		font-family: var(--font-title);
+		font-size: clamp(2.2rem, 4vw, 3.2rem);
+		letter-spacing: 1.5px;
+		margin-bottom: 1rem;
+		color: #ffffff;
+		line-height: 1.1;
+	}
+	.modal-subtitle {
+		font-size: 1.15rem;
+		font-weight: 600;
+		margin-bottom: 1.8rem;
+		color: #ffffff;
+	}
+	.modal-list {
+		list-style: none;
+		margin-bottom: 2.5rem;
+	}
+	.modal-list li {
+		position: relative;
+		padding-left: 1.5rem;
+		margin-bottom: 0.8rem;
+		font-size: 1.05rem;
+		color: #e0e0e0;
+		line-height: 1.5;
+	}
+	.modal-list li::before {
+		content: "•";
+		position: absolute;
+		left: 0;
+		color: #ffffff;
+		font-size: 1.2rem;
+	}
+	.modal-contact-text {
+		font-size: 1.05rem;
+		font-weight: 600;
+		color: #ffffff;
+	}
+	.modal-contact-text a {
+		color: #ffffff;
+		text-decoration: underline;
+		font-weight: 800;
+		transition: color 0.2s ease;
+	}
+	.modal-contact-text a:hover {
+		color: #29b7ef;
+	}
+
+	@media(max-width: 768px) {
+		.modal-body { padding: 2.5rem 1.8rem; }
+		.close-btn-box { top: 1.2rem; right: 1.2rem; width: 38px; height: 38px; }
+		.modal-overlay { background: rgba(11, 11, 14, 0.88); }
+	}
+</style>

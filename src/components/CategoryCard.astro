@@ -1,0 +1,65 @@
+---
+interface Props {
+	title: string;
+	image: string;
+	href: string;
+	rotation?: 'left' | 'center' | 'right';
+}
+
+const { title, image, href, rotation = 'center' } = Astro.props;
+
+const rotationClass = {
+	left: 'card-rotate-left',
+	center: 'card-rotate-center',
+	right: 'card-rotate-right',
+}[rotation];
+---
+
+<a href={href} class={`category-card ${rotationClass}`}>
+	<img src={image} alt={title} class="category-img" />
+	<span class="category-title">{title}</span>
+</a>
+
+<style>
+	.category-card {
+		width: 110%;
+		max-width: 450px;
+		position: relative;
+		display: block;
+		border-radius: 16px;
+		overflow: hidden;
+		text-decoration: none;
+		box-shadow: 0 10px 25px rgba(0, 0, 0, 0);
+		transition: transform 0.3s ease, box-shadow 0.3s ease;
+	}
+
+	.category-card:hover {
+		transform: rotate(-2deg) translateY(-8px);
+		box-shadow: 0 15px 30px hsla(0, 0%, 0%, 0);
+	}
+
+	.category-img {
+		width: 100%;
+		height: auto;
+		display: block;
+		object-fit: cover;
+	}
+
+	.category-title {
+		position: absolute;
+		top: 40px;
+		left: 25px;
+		font-family: var(--font-title);
+		font-size: 3rem;
+		color: #ffffff;
+		letter-spacing: 1.5px;
+		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+		z-index: 2;
+	}
+
+	@media (max-width: 768px) {
+		.category-card {
+			transform: none !important;
+		}
+	}
+</style>

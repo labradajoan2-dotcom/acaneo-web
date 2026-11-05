@@ -1,0 +1,84 @@
+---
+import ProductCard from '../ProductCard.astro';
+---
+
+<section id="tienda" class="novedades-section">
+    <div class="novedades-container">
+        <div class="novedades-header">
+            <h2 class="novedades-title">ÚLTIMAS NOVEDADES</h2>
+            <div class="title-underline"></div>
+        </div>
+
+        <div class="novedades-grid">
+            <ProductCard name="Kira Mood Shirt" price="22 $" image="/novedad-1.png" />
+            <ProductCard name="Aldan X Nemo Hoodie" price="35 $" image="/novedad-2.png" />
+            <ProductCard name="Gorra Nemo Gump 2 col." price="20 $" image="/novedad-3.png" />
+        </div>
+
+        <div class="novedades-btn-container">
+            <a href="#tienda" class="btn-ver-mas">VER MÁS NOVEDADES</a>
+        </div>
+    </div>
+</section>
+
+<style>
+	.novedades-section {
+		background-color: #eb7443;
+		padding: 2rem 3rem;
+		text-align: center;
+	}
+	.novedades-container {
+		max-width: 1200px;
+		margin: 0 auto;
+	}
+	.novedades-header {
+		display: inline-block;
+		margin-bottom: 3rem;
+		position: relative;
+	}
+	.novedades-title {
+		font-family: var(--font-title);
+		font-size: clamp(2.2rem, 4vw, 3rem);
+		color: #ffffff;
+		letter-spacing: 2px;
+	}
+	.title-underline {
+		position: absolute;
+		bottom: -10px;
+		left: 50%;
+		transform: translateX(-50%);
+		width: 110%;
+		height: 6px;
+		background: #29b7ef;
+		border-radius: 4px;
+		opacity: 0.85;
+	}
+	.novedades-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+		gap: 6rem;
+		align-items: center;
+		margin-bottom: 3.5rem;
+	}
+	.novedades-btn-container {
+		margin-top: 2rem;
+	}
+	.btn-ver-mas {
+		display: inline-block;
+		background: transparent;
+		color: #ffffff;
+		border: 2px solid #ffffff;
+		padding: 0.9rem 2.5rem;
+		border-radius: 50px;
+		font-family: var(--font-title);
+		font-size: 1.1rem;
+		letter-spacing: 1px;
+		text-decoration: none;
+		transition: background 0.2s, transform 0.2s;
+	}
+	.btn-ver-mas:hover {
+		background: #ffffff;
+		color: #eb7443;
+		transform: translateY(-2px);
+	}
+</style>

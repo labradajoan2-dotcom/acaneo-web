@@ -1,0 +1,127 @@
+<section id="serie" class="series-section">
+    <div class="series-grid">
+        <div class="series-info">
+            <h2 class="series-main-title">ALDÁN: EL ÚLTIMO ARCOÍRIS</h2>
+            <p>En un planeta cortado a la mitad conviven seres mágicos y fantásticos con pingüinos tropicales y animales malformados, en lo que se conoce como Aldán, la última (y mejor) civilización del planeta Tierra. Aldán es casa y es parque de diversiones, la vida allí es maravillosa, o era. Un evento cósmico apunta a la destrucción de lo que queda de tierra, creando una cuenta atrás de cinco días. ¿Cómo vivir cuando la muerte es inminente? ¿Cómo amar cuando las luces en el cielo no son estrellas?</p>
+            <div class="piloto-btn-container">
+                <a href="https://youtu.be/xx3923JVhy4" target="_blank" class="btn-piloto">EPISODIO PILOTO</a>
+            </div>
+        </div>
+        <div class="series-trailer">
+            <div class="video-container">
+                <iframe 
+                   src="https://www.youtube.com/embed/DLZq9_err_8?si=iRZ2Sp4gtTewL4UU" 
+                   title="Tráiler Aldán" 
+                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                   allowfullscreen>
+                </iframe>
+            </div>
+        </div>
+    </div>
+
+    <div class="stills-grid">
+        <div class="still-item"><img src="/still-1.png" alt="Still 1" class="still-img" /></div>
+        <div class="still-item"><img src="/still-2.png" alt="Still 2" class="still-img" /></div>
+        <div class="still-item"><img src="/still-3.png" alt="Still 3" class="still-img" /></div>
+        <div class="still-item"><img src="/still-4.png" alt="Still 4" class="still-img" /></div>
+        <div class="still-item"><img src="/still-5.png" alt="Still 5" class="still-img" /></div>
+        <div class="still-item"><img src="/still-6.png" alt="Still 6" class="still-img" /></div>
+    </div>
+    <style>
+	.series-section {
+		background-color: #29b7ef;
+		padding: 5rem 0 0 0;
+		color: #ffffff;
+		width: 100%;
+	}
+	.series-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 4rem;
+		align-items: center;
+		margin-bottom: 4rem;
+		max-width: 1400px;
+		margin-left: auto;
+		margin-right: auto;
+		padding: 0 4rem;
+	}
+	.series-main-title {
+		font-family: var(--font-title);
+		font-size: clamp(2rem, 3.5vw, 3rem);
+		margin-bottom: 1.5rem;
+		letter-spacing: 1px;
+	}
+	.series-info p {
+		color: #ffffff;
+		font-size: 1.05rem;
+		margin-bottom: 2rem;
+		line-height: 1.7;
+	}
+	.piloto-btn-container { margin-top: 1.5rem; }
+	.btn-piloto {
+		display: inline-block;
+		background: transparent;
+		color: #ffffff;
+		border: 2px solid #ffffff;
+		padding: 0.75rem 2rem;
+		border-radius: 50px;
+		font-family: var(--font-title);
+		font-size: 2rem;
+		letter-spacing: 1px;
+		text-decoration: none;
+		transition: background 0.2s, color 0.2s;
+	}
+	.btn-piloto:hover {
+		background: #ffffff;
+		color: #29b7ef;
+	}
+	.video-container {
+		position: relative;
+		width: 100%;
+		padding-bottom: 56.25%;
+		height: 0;
+		border-radius: 12px;
+		overflow: hidden;
+		background: #000;
+		box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+	}
+	.video-container iframe {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		border: none;
+	}
+	.stills-grid {
+		width: 100%;
+		margin: 0 auto;
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 0;
+	}
+	.still-item {
+		border-radius: 0px;
+		overflow: hidden;
+		background: #000;
+	}
+	.still-img {
+		width: 100%;
+		height: auto;
+		display: block;
+		object-fit: cover;
+		transition: transform 0.3s ease;
+	}
+	.still-img:hover {
+		transform: scale(1.03);
+	}
+
+	@media(max-width: 768px) {
+		.series-grid {
+			grid-template-columns: 1fr;
+			padding: 0 1.5rem;
+		}
+		.stills-grid { grid-template-columns: 1fr; }
+	}
+</style>
+</section>

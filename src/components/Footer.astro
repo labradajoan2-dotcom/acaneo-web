@@ -1,0 +1,130 @@
+<footer id="contacto" class="footer">
+    <div class="footer-container">
+        <div class="footer-brand">
+            <img src="/logo.png" alt="Acaneo Collective" class="footer-logo" />
+            <p class="copyright-text">Acaneo Collective® All rights reserved.</p>
+        </div>
+
+        <div class="footer-social">
+            <a href="https://www.instagram.com/acaneo_collective?srtk=MXRkbHh3ZGtmb3hydQ==" target="_blank" aria-label="Instagram" class="social-icon">
+                <img src="/icon-instagram.png" alt="Instagram" class="social-img" />
+            </a>
+            <a href="https://youtube.com/@acaneo_collective?si=7gbt-DOeeup96UEt" target="_blank" aria-label="YouTube" class="social-icon">
+                <img src="/icon-youtube.png" alt="YouTube" class="social-img" />
+            </a>
+            <a href="https://ko-fi.com/aldan_indieshow" target="_blank" aria-label="Ko-fi" class="social-icon">
+                <img src="/icon-kofi.png" alt="Ko-fi" class="social-img" />
+            </a>
+        </div>
+
+        <div class="footer-nav-grid">
+            <a href="/#tienda" class="btn-footer">NOVEDAD</a>
+            <a href="/#categoria" class="btn-footer">CATEGORÍAS</a>
+            <a href="/#serie" class="btn-footer">ALDÁN</a>
+            <a href="/#servicios" class="btn-footer">SERVICIOS</a>
+        </div>
+    </div>
+
+    <style>
+	.footer {
+		background-image: url('/footer-bg.png');
+		background-size: cover;
+		background-position: center;
+		background-repeat: no-repeat;
+		padding: 4rem 2rem;
+		width: 100%;
+	}
+	.footer-container {
+		max-width: 1400px;
+		margin: 0 auto;
+		display: grid;
+		grid-template-columns: 1fr auto 1fr;
+		align-items: center;
+		gap: 3rem;
+	}
+	.footer-brand {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.8rem;
+	}
+	.footer-logo {
+		max-height: 100px;
+		width: auto;
+		display: block;
+	}
+	.copyright-text {
+		font-family: var(--font-body);
+		color: #ffffff;
+		font-size: 0.95rem;
+		font-weight: 600;
+		letter-spacing: 0.5px;
+	}
+	.footer-social {
+		display: flex;
+		align-items: center;
+		gap: 1.2rem;
+		justify-content: center;
+		margin-bottom: -10rem;
+	}
+	.social-icon {
+		width: 48px;
+		height: 48px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		text-decoration: none;
+		transition: transform 0.2s ease;
+	}
+	.social-icon:hover {
+		transform: scale(1.1);
+	}
+	.social-img {
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		display: block;
+	}
+	.footer-nav-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 1rem;
+		justify-self: end;
+		width: 120%;
+		max-width: 380px;
+	}
+	.btn-footer {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.8rem 1.5rem;
+		border: 2px solid #ffffff;
+		border-radius: 12px;
+		color: #ffffff;
+		font-family: var(--font-title);
+		font-size: 1.1rem;
+		letter-spacing: 1px;
+		text-decoration: none;
+		transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+		text-align: center;
+	}
+	.btn-footer:hover {
+		background-color: #ffffff;
+		color: #29b7ef;
+		transform: translateY(-2px);
+	}
+
+	@media(max-width: 900px) {
+		.footer-container {
+			grid-template-columns: 1fr;
+			justify-items: center;
+			text-align: center;
+			gap: 2.5rem;
+		}
+		.footer-brand { align-items: center; }
+		.footer-nav-grid { justify-self: center; }
+	}
+</style>
+
+
+</footer>
