@@ -5,18 +5,34 @@ import ProductCard from '../ProductCard.astro';
 <section id="tienda" class="novedades-section">
     <div class="novedades-container">
         <div class="novedades-header">
-            <h2 class="novedades-title">ÚLTIMAS NOVEDADES</h2>
+            <h2 class="novedades-title" data-i18n="title-novedades">ÚLTIMAS NOVEDADES</h2>
             <div class="title-underline"></div>
         </div>
 
         <div class="novedades-grid">
-            <ProductCard name="Kira Mood Shirt" price="22 $" image="/novedad-1.png" />
-            <ProductCard name="Aldan X Nemo Hoodie" price="35 $" image="/novedad-2.png" />
-            <ProductCard name="Gorra Nemo Gump 2 col." price="20 $" image="/novedad-3.png" />
+            <!-- Añadido el enlace (href) correspondiente a cada producto -->
+            <ProductCard 
+                name="Kira Mood Shirt" 
+                price="22 $" 
+                image="/novedad-1.png" 
+                href="https://acaneocollective.myshopify.com/products/kira-mood-shirt" 
+            />
+            <ProductCard 
+                name="Aldan X Nemo Hoodie" 
+                price="35 $" 
+                image="/novedad-2.png" 
+                href="https://acaneocollective.myshopify.com/products/aldan-nemo-hoodie" 
+            />
+            <ProductCard 
+                name="Gorra Nemo Gump 2 col." 
+                price="20 $" 
+                image="/novedad-3.png" 
+                href="https://acaneocollective.myshopify.com/products/gorra-nemo-gump" 
+            />
         </div>
 
         <div class="novedades-btn-container">
-            <a href="#tienda" class="btn-ver-mas">VER MÁS NOVEDADES</a>
+            <a href="https://acaneocollective.myshopify.com" class="btn-ver-mas" data-i18n="btn-ver-mas">VER MÁS NOVEDADES</a>
         </div>
     </div>
 </section>

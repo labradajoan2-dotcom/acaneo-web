@@ -4,11 +4,13 @@ interface Props {
 	price: string;
 	image: string;
 	alt?: string;
+	href: string; 
 }
 
-const { name, price, image, alt = name } = Astro.props;
+const { name, price, image, alt = name, href } = Astro.props;
 ---
 
+<a href={href} class="product-card-link">
 <div class="novedad-item">
 	<div class="product-img-container">
 		<img src={image} alt={alt} class="prod-img" />
@@ -18,8 +20,18 @@ const { name, price, image, alt = name } = Astro.props;
 		<span class="prod-price">{price}</span>
 	</div>
 </div>
+</a> 
 
 <style>
+	.product-card-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        transition: transform 0.2s;
+    }
+    .product-card-link:hover {
+        transform: translateY(-5px);
+    }
 	.novedad-item {
 		display: flex;
 		flex-direction: column;
