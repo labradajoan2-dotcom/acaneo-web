@@ -1,0 +1,404 @@
+---
+// src/components/HeroSlider.astro
+---
+
+<section class="hero-slider" id="heroSlider" aria-label="Destacados principales">
+    <div class="slider-track" id="sliderTrack">
+        <!-- Slide inicial de respaldo instantáneo -->
+        <div class="hero-slide">
+            <a href="/adviento" class="slide-image-link" aria-label="Calendario de Adviento de Aldán">
+                <picture>
+                    <source media="(max-width: 768px)" srcset="/banners/banner-adviento-movil.png" />
+                    <img 
+                        src="/banners/banner-adviento-pc.png" 
+                        alt="Calendario de Adviento de Aldán - Reclama tu recompensa diaria" 
+                        loading="eager"
+                    />
+                </picture>
+            </a>
+           
+        </div>
+    </div>
+
+    <!-- Flechas de navegación -->
+    <button type="button" class="slider-arrow prev" id="prevSlide" aria-label="Banner anterior" hidden>
+        ❮
+    </button>
+    <button type="button" class="slider-arrow next" id="nextSlide" aria-label="Siguiente banner" hidden>
+        ❯
+    </button>
+
+    <!-- Indicadores inferiores -->
+    <div class="slider-dots" id="sliderDots" hidden></div>
+</section>
+
+<script>
+    import { supabase } from '../lib/supabase';
+
+    interface HeroBanner {
+        id: string;
+        titulo: string;
+        imagen_pc_url: string;
+        imagen_movil_url: string | null;
+        enlace_url: string;
+        texto_boton: string | null;
+        color_boton: string | null;
+        pos_x_pc: number | null;
+        pos_y_pc: number | null;
+        pos_x_movil: number | null;
+        pos_y_movil: number | null;
+        orden: number;
+    }
+
+    const slider = document.getElementById('heroSlider');
+    const track = document.getElementById('sliderTrack');
+    const prevBtn = document.getElementById('prevSlide');
+    const nextBtn = document.getElementById('nextSlide');
+    const dotsContainer = document.getElementById('sliderDots');
+
+    let currentIndex = 0;
+    let totalSlides = 1;
+    let autoplayTimer: number | undefined;
+
+    function goToSlide(index: number) {
+        if (!track || totalSlides <= 1) return;
+        currentIndex = (index + totalSlides) % totalSlides;
+        track.style.transform = `translateX(-${currentIndex * 100}%)`;
+
+        dotsContainer?.querySelectorAll('.dot').forEach((dot, i) => {
+            dot.classList.toggle('active', i === currentIndex);
+        });
+    }
+
+    function startAutoplay() {
+        stopAutoplay();
+        if (totalSlides <= 1) return;
+        autoplayTimer = window.setInterval(() => {
+            goToSlide(currentIndex + 1);
+        }, 6000);
+    }
+
+    function stopAutoplay() {
+        if (autoplayTimer) {
+            clearInterval(autoplayTimer);
+            autoplayTimer = undefined;
+        }
+    }
+
+    function renderSlides(banners: HeroBanner[]) {
+        if (!track || !dotsContainer || !prevBtn || !nextBtn || banners.length === 0) return;
+
+        totalSlides = banners.length;
+        currentIndex = 0;
+        track.style.transform = 'translateX(0%)';
+
+        track.innerHTML = '';
+        dotsContainer.innerHTML = '';
+
+        banners.forEach((banner, index) => {
+            const slideDiv = document.createElement('div');
+            slideDiv.className = 'hero-slide';
+
+            const isExternal = banner.enlace_url.startsWith('http');
+
+            // 1. Imagen clicable con respaldo automático si falla la versión móvil
+            const imgLink = document.createElement('a');
+            imgLink.href = banner.enlace_url || '/';
+            imgLink.className = 'slide-image-link';
+            imgLink.setAttribute('aria-label', banner.titulo);
+            if (isExternal) {
+                imgLink.target = '_blank';
+                imgLink.rel = 'noopener noreferrer';
+            }
+
+            const picture = document.createElement('picture');
+            const movilUrl = banner.imagen_movil_url?.trim();
+
+            if (movilUrl) {
+                const source = document.createElement('source');
+                source.media = '(max-width: 768px)';
+                source.srcset = movilUrl;
+                picture.appendChild(source);
+            }
+
+            const img = document.createElement('img');
+            img.src = banner.imagen_pc_url;
+            img.alt = banner.titulo;
+            img.loading = index === 0 ? 'eager' : 'lazy';
+            img.draggable = false;
+
+            img.onerror = () => {
+                const sourceEl = picture.querySelector('source');
+                if (sourceEl) {
+                    sourceEl.remove();
+                    img.src = banner.imagen_pc_url;
+                }
+            };
+
+            picture.appendChild(img);
+            imgLink.appendChild(picture);
+            slideDiv.appendChild(imgLink);
+
+            // 2. Botón CTA posicionado por coordenadas exactas (%)
+            if (banner.texto_boton && banner.texto_boton.trim() !== '') {
+                const ctaBtn = document.createElement('a');
+                ctaBtn.href = banner.enlace_url || '/';
+                ctaBtn.className = 'hero-cta-btn';
+                ctaBtn.textContent = banner.texto_boton;
+
+                const xPc = banner.pos_x_pc ?? 15;
+                const yPc = banner.pos_y_pc ?? 80;
+                const xMovil = banner.pos_x_movil ?? 50;
+                const yMovil = banner.pos_y_movil ?? 85;
+
+                ctaBtn.style.backgroundColor = banner.color_boton || '#eb7443';
+                ctaBtn.style.setProperty('--x-pc', `${xPc}%`);
+                ctaBtn.style.setProperty('--y-pc', `${yPc}%`);
+                ctaBtn.style.setProperty('--x-movil', `${xMovil}%`);
+                ctaBtn.style.setProperty('--y-movil', `${yMovil}%`);
+
+                if (isExternal) {
+                    ctaBtn.target = '_blank';
+                    ctaBtn.rel = 'noopener noreferrer';
+                }
+
+                slideDiv.appendChild(ctaBtn);
+            }
+
+            track.appendChild(slideDiv);
+
+            // 3. Punto indicador
+            const dot = document.createElement('button');
+            dot.type = 'button';
+            dot.className = `dot ${index === 0 ? 'active' : ''}`;
+            dot.setAttribute('aria-label', `Ir al banner ${index + 1}`);
+            dot.addEventListener('click', () => {
+                goToSlide(index);
+                startAutoplay();
+            });
+            dotsContainer.appendChild(dot);
+        });
+
+        const hasMultiple = totalSlides > 1;
+        prevBtn.hidden = !hasMultiple;
+        nextBtn.hidden = !hasMultiple;
+        dotsContainer.hidden = !hasMultiple;
+
+        startAutoplay();
+    }
+
+    async function loadBanners() {
+        const { data, error } = await supabase
+            .from('hero_banners')
+            .select('id, titulo, imagen_pc_url, imagen_movil_url, enlace_url, texto_boton, color_boton, pos_x_pc, pos_y_pc, pos_x_movil, pos_y_movil, orden')
+            .eq('activo', true)
+            .order('orden', { ascending: true });
+
+        if (!error && data && data.length > 0) {
+            renderSlides(data);
+        }
+    }
+
+    prevBtn?.addEventListener('click', () => {
+        goToSlide(currentIndex - 1);
+        startAutoplay();
+    });
+
+    nextBtn?.addEventListener('click', () => {
+        goToSlide(currentIndex + 1);
+        startAutoplay();
+    });
+
+    slider?.addEventListener('mouseenter', stopAutoplay);
+    slider?.addEventListener('mouseleave', startAutoplay);
+
+    let touchStartX = 0;
+    slider?.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+        stopAutoplay();
+    }, { passive: true });
+
+    slider?.addEventListener('touchend', (e) => {
+        const touchEndX = e.changedTouches[0].screenX;
+        const diff = touchStartX - touchEndX;
+        if (Math.abs(diff) > 45) {
+            goToSlide(diff > 0 ? currentIndex + 1 : currentIndex - 1);
+        }
+        startAutoplay();
+    }, { passive: true });
+
+    loadBanners();
+</script>
+
+<style>
+    .hero-slider {
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+        background-color: #1da1db;
+        margin: 0;
+        padding: 0;
+    }
+
+    .slider-track {
+        display: flex;
+        width: 100%;
+        transition: transform 0.55s cubic-bezier(0.25, 0.8, 0.25, 1);
+        will-change: transform;
+    }
+
+    :global(.hero-slide) {
+        position: relative;
+        flex: 0 0 100%;
+        width: 100%;
+        display: block;
+        user-select: none;
+    }
+
+    :global(.slide-image-link) {
+        display: block;
+        width: 100%;
+        text-decoration: none;
+    }
+
+    :global(.slide-image-link picture),
+    :global(.slide-image-link img) {
+        display: block;
+        width: 100%;
+        height: auto;
+        object-fit: cover;
+    }
+
+    /* Botón CTA con coordenadas exactas para PC */
+    :global(.hero-cta-btn) {
+        position: absolute;
+        left: var(--x-pc, 15%);
+        top: var(--y-pc, 80%);
+        transform: translate(-50%, -50%);
+        z-index: 8;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.9rem 2rem;
+        border: 3px solid #ffffff00;
+        border-radius: 999px;
+        color: #ffffff;
+        text-decoration: none;
+        font-family: var(--font-title, sans-serif);
+        font-size: clamp(1rem, 1.5vw, 1.35rem);
+        font-weight: 800;
+        letter-spacing: 1px;
+        white-space: nowrap;
+        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s, box-shadow 0.2s;
+    }
+
+    :global(.hero-cta-btn:hover) {
+        transform: translate(-50%, -50%) scale(1.06);
+        filter: brightness(1.08);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Flechas laterales */
+    .slider-arrow {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 10;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.75);
+        background: rgba(11, 11, 14, 0.089);
+        backdrop-filter: blur(4px);
+        color: #ffffff;
+        font-size: 1.2rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s, transform 0.2s, border-color 0.2s;
+    }
+
+    .slider-arrow[hidden] {
+        display: none;
+    }
+
+    .slider-arrow:hover {
+        background: #eb7443;
+        border-color: #ffffff;
+        transform: translateY(-50%) scale(1.08);
+    }
+
+    .slider-arrow.prev {
+        left: 1.25rem;
+    }
+
+    .slider-arrow.next {
+        right: 1.25rem;
+    }
+
+    /* Puntos indicadores */
+    .slider-dots {
+        position: absolute;
+        bottom: 1.5rem;
+        left: 50%;
+        top: 95%;
+        transform: translateX(-50%);
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.4rem 0.5rem;
+        border-radius: 999px;
+        background: hsla(240, 12%, 5%, 0);
+    }
+
+    .slider-dots[hidden] {
+        display: none;
+    }
+
+    :global(.slider-dots .dot) {
+        width: 8px;
+        height: 8px;
+        padding: 0;
+        border-radius: 999px;
+        border: none;
+        background: rgba(255, 255, 255, 0.5);
+        cursor: pointer;
+        transition: width 0.25s ease, background-color 0.25s ease;
+    }
+
+    :global(.slider-dots .dot.active) {
+        width: 26px;
+        background: #ffffff;
+    }
+
+    @media (max-width: 768px) {
+        /* En móvil cambia automáticamente a las coordenadas de móvil */
+        :global(.hero-cta-btn) {
+            left: var(--x-movil, 50%);
+            top: var(--y-movil, 85%);
+            padding: 0.7rem 1.4rem;
+            font-size: 0.95rem;
+            border-width: 2px;
+        }
+
+        .slider-arrow {
+            width: 36px;
+            height: 36px;
+            font-size: 1rem;
+        }
+
+        .slider-arrow.prev {
+            left: 0.6rem;
+        }
+
+        .slider-arrow.next {
+            right: 0.6rem;
+        }
+
+        .slider-dots {
+            bottom: 0.65rem;
+        }
+    }
+</style>

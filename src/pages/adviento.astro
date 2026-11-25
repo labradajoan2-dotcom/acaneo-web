@@ -1,0 +1,568 @@
+---
+// src/pages/adviento.astro
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+
+// Coordenadas porcentuales exactas para PC (Adviento PC.jpg)
+const PUERTAS_PC = [
+    // Ala izquierda - Fila 1 (1, 2, 3, 4)
+    { dia: 1,  top: '60.5%', left: '25%', width: '4%', height: '8%' },
+    { dia: 2,  top: '60.5%', left: '30.1%', width: '4%', height: '8%' },
+    { dia: 3,  top: '60.5%', left: '35%', width: '4%', height: '8%' },
+    { dia: 4,  top: '60.5%', left: '39.6%', width: '4%', height: '8%' },
+
+    // Ala derecha - Fila 1 (5, 6, 7, 8)
+    { dia: 5,  top: '60.5%', left: '62.5%', width: '4%', height: '8%' },
+    { dia: 6,  top: '60.5%', left: '67.6%', width: '4%', height: '8%' },
+    { dia: 7,  top: '60.5%', left: '72.45%', width: '4%', height: '8%' },
+    { dia: 8,  top: '60.5%', left: '77.1%', width: '4%', height: '8%' },
+
+    // Ala izquierda - Fila 2 (9, 10, 11, 12)
+    { dia: 9,  top: '72.3%', left: '25%', width: '4%', height: '8%' },
+    { dia: 10, top: '72.4%', left: '30%', width: '4%', height: '8%' },
+    { dia: 11, top: '72.4%', left: '34.9%', width: '4%', height: '8%' },
+    { dia: 12, top: '72.4%', left: '39.7%', width: '4%', height: '8%' },
+
+    // Ala derecha - Fila 2 (13, 14, 15, 16)
+    { dia: 13, top: '72.4%', left: '62.6%', width: '4%', height: '8%' },
+    { dia: 14, top: '72.0%', left: '67.8%', width: '4%', height: '8%' },
+    { dia: 15, top: '72%', left: '73%', width: '4%', height: '8%' },
+    { dia: 16, top: '71.9%', left: '77.9%', width: '4%', height: '8%' },
+
+    // Ala izquierda - Fila 3 (17, 18, 19, 20)
+    { dia: 17, top: '83.2%', left: '24.3%', width: '4%', height: '8%' },
+    { dia: 18, top: '83.8%', left: '29.6%', width: '4%', height: '8%' },
+    { dia: 19, top: '84.1%', left: '34.3%', width: '4%', height: '8%' },
+    { dia: 20, top: '84.1%', left: '39.6%', width: '4%', height: '8%' },
+
+    // Ala derecha - Fila 3 (21, 22, 23, 24)
+    { dia: 21, top: '84.3%', left: '62.8%', width: '4%', height: '8%' },
+    { dia: 22, top: '83.7%', left: '68.1%', width: '4%', height: '8%' },
+    { dia: 23, top: '83.7%', left: '73.2%', width: '4%', height: '8%' },
+    { dia: 24, top: '83.3%', left: '78.1%', width: '4%', height: '8%' },
+
+    // Entrada central de la carpa (25)
+    { dia: 25, top: '75.9%', left: '51.1%', width: '12.5%', height: '24.5%' },
+];
+
+// Coordenadas porcentuales para Móvil (Adviento Movil.jpg)
+// Pásame la imagen móvil para calibrar estos porcentajes exactos
+const PUERTAS_MOVIL = [
+    // Fila 1 (1, 2, 3, 4, 5, 6)
+    { dia: 1,  top: '45.8%', left: '9.5%',  width: '13.5%', height: '7.6%' },
+    { dia: 2,  top: '45.8%', left: '25.5%', width: '13.5%', height: '7.6%' },
+    { dia: 3,  top: '45.8%', left: '41.5%', width: '13.5%', height: '7.6%' },
+    { dia: 4,  top: '45.8%', left: '57.6%', width: '13.5%', height: '7.6%' },
+    { dia: 5,  top: '45.8%', left: '73.6%', width: '13.5%', height: '7.6%' },
+    { dia: 6,  top: '45.8%', left: '89.7%', width: '13.5%', height: '7.6%' },
+
+    // Fila 2 (7, 8, 9, 10 - centradas)
+    { dia: 7,  top: '55.4%', left: '25.5%', width: '13.5%', height: '7.6%' },
+    { dia: 8,  top: '55.4%', left: '41.5%', width: '13.5%', height: '7.6%' },
+    { dia: 9,  top: '55.4%', left: '57.6%', width: '13.5%', height: '7.6%' },
+    { dia: 10, top: '55.4%', left: '73.6%', width: '13.5%', height: '7.6%' },
+
+    // Fila 3 (11, 12, 13, 14, 15, 16)
+    { dia: 11, top: '65.0%', left: '9.5%',  width: '13.5%', height: '7.6%' },
+    { dia: 12, top: '65.0%', left: '25.5%', width: '13.5%', height: '7.6%' },
+    { dia: 13, top: '65.0%', left: '41.5%', width: '13.5%', height: '7.6%' },
+    { dia: 14, top: '65.0%', left: '57.6%', width: '13.5%', height: '7.6%' },
+    { dia: 15, top: '65.0%', left: '73.6%', width: '13.5%', height: '7.6%' },
+    { dia: 16, top: '65.0%', left: '89.7%', width: '13.5%', height: '7.6%' },
+
+    // Fila 4 (17, 18 a la izquierda | 19, 20 a la derecha)
+    { dia: 17, top: '74.6%', left: '9.5%',  width: '13.5%', height: '7.6%' },
+    { dia: 18, top: '74.6%', left: '25.5%', width: '13.5%', height: '7.6%' },
+    { dia: 19, top: '74.6%', left: '73.6%', width: '13.5%', height: '7.6%' },
+    { dia: 20, top: '74.6%', left: '89.7%', width: '13.5%', height: '7.6%' },
+
+    // Fila 5 (21, 22 a la izquierda | 23, 24 a la derecha)
+    { dia: 21, top: '84.2%', left: '9.5%',  width: '13.5%', height: '7.6%' },
+    { dia: 22, top: '84.2%', left: '25.5%', width: '13.5%', height: '7.6%' },
+    { dia: 23, top: '84.2%', left: '73.6%', width: '13.5%', height: '7.6%' },
+    { dia: 24, top: '84.2%', left: '89.7%', width: '13.5%', height: '7.6%' },
+
+    // Entrada central (25)
+    { dia: 25, top: '80.5%', left: '49.6%', width: '28.5%', height: '18.5%' },
+];
+---
+
+<Layout title="Calendario de Adviento | Aldán - Acaneo Collective">
+    <Header />
+
+    <main class="advent-page">
+        <!-- Barra superior sutil de progreso -->
+        <div class="advent-status-bar">
+            <div class="progress-badge">
+                Progreso: <strong id="progressCount">0</strong> / 25 regalos abiertos
+            </div>
+        </div>
+
+        <!-- ESCENARIO ESCRITORIO (PC) -->
+        <div class="circus-stage desktop-stage">
+            <img 
+                src="/adviento/adviento-pc.png" 
+                alt="Calendario de Adviento de Aldán" 
+                class="circus-bg-img"
+                draggable="false"
+            />
+
+            {PUERTAS_PC.map((puerta) => (
+                <button
+                    type="button"
+                    class={`circus-door ${puerta.dia === 25 ? 'door-25' : ''}`}
+                    style={`top: ${puerta.top}; left: ${puerta.left}; width: ${puerta.width}; height: ${puerta.height};`}
+                    data-dia={puerta.dia}
+                    aria-label={`Abrir puerta del día ${puerta.dia}`}
+                >
+                    <span class="door-check" aria-hidden="true">★</span>
+                </button>
+            ))}
+        </div>
+
+        <!-- ESCENARIO MÓVIL -->
+        <div class="circus-stage mobile-stage">
+            <img 
+                src="/adviento/adviento-movil.png" 
+                alt="Calendario de Adviento de Aldán" 
+                class="circus-bg-img"
+                draggable="false"
+            />
+
+            {PUERTAS_MOVIL.map((puerta) => (
+                <button
+                    type="button"
+                    class={`circus-door ${puerta.dia === 25 ? 'door-25' : ''}`}
+                    style={`top: ${puerta.top}; left: ${puerta.left}; width: ${puerta.width}; height: ${puerta.height};`}
+                    data-dia={puerta.dia}
+                    aria-label={`Abrir puerta del día ${puerta.dia}`}
+                >
+                    <span class="door-check" aria-hidden="true">★</span>
+                </button>
+            ))}
+        </div>
+
+        <!-- Pop-up Modal de Recompensa -->
+        <dialog id="rewardModal" class="reward-modal">
+            <div class="modal-card">
+                <button type="button" id="closeRewardModal" class="close-btn" aria-label="Cerrar ventana">✕</button>
+                
+                <div class="modal-badge" id="modalBadge">DÍA 1</div>
+                <h2 id="modalTitle">Cargando sorpresa...</h2>
+                
+                <div class="modal-media" id="modalMediaBox">
+                    <img id="modalImage" src="" alt="" />
+                </div>
+
+                <p id="modalDesc">Preparando tu recompensa...</p>
+
+                <a 
+                    id="modalDownloadBtn" 
+                    href="#" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    class="download-btn"
+                    style="display: none;"
+                >
+                    Descargar recompensa
+                </a>
+            </div>
+        </dialog>
+    </main>
+
+</Layout>
+
+<script>
+    import { supabase } from '../lib/supabase';
+
+    interface Recompensa {
+        dia: number;
+        titulo: string;
+        subtitulo: string;
+        descripcion: string;
+        imagen_url: string | null;
+        descarga_url: string | null;
+        texto_boton: string | null;
+        publicado: boolean;
+    }
+
+    const modal = document.getElementById('rewardModal') as HTMLDialogElement | null;
+    const closeBtn = document.getElementById('closeRewardModal');
+    const modalBadge = document.getElementById('modalBadge');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalDesc = document.getElementById('modalDesc');
+    const modalMediaBox = document.getElementById('modalMediaBox');
+    const modalImage = document.getElementById('modalImage') as HTMLImageElement | null;
+    const modalDownloadBtn = document.getElementById('modalDownloadBtn') as HTMLAnchorElement | null;
+    const progressCount = document.getElementById('progressCount');
+
+    let currentUserId: string | null = null;
+    let diasAbiertos: number[] = [];
+    const recompensasCache = new Map<number, Recompensa>();
+
+    // 1. Sesión anónima silenciosa + carga de recompensas y progreso
+    async function initAdviento() {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session?.user) {
+            currentUserId = session.user.id;
+        } else {
+            const { data } = await supabase.auth.signInAnonymously();
+            currentUserId = data.user?.id ?? null;
+        }
+
+        const [recompensasRes, progresoRes] = await Promise.all([
+            supabase.from('adviento_recompensas').select('*').order('dia', { ascending: true }),
+            currentUserId
+                ? supabase.from('adviento_progreso').select('dias_abiertos').eq('user_id', currentUserId).maybeSingle()
+                : Promise.resolve({ data: null })
+        ]);
+
+        if (recompensasRes.data) {
+            recompensasRes.data.forEach((item: Recompensa) => {
+                recompensasCache.set(item.dia, item);
+            });
+        }
+
+        if (progresoRes.data?.dias_abiertos) {
+            diasAbiertos = progresoRes.data.dias_abiertos;
+        }
+
+        actualizarUI();
+    }
+
+    // 2. Actualizar luces y estrellas en ambos escenarios (PC y Móvil)
+    function actualizarUI() {
+        if (progressCount) {
+            progressCount.textContent = String(diasAbiertos.length);
+        }
+
+        document.querySelectorAll('.circus-door').forEach((door) => {
+            const dia = Number((door as HTMLElement).dataset.dia);
+            const recompensa = recompensasCache.get(dia);
+
+            if (recompensa?.publicado) {
+                door.classList.add('is-available');
+            }
+            if (diasAbiertos.includes(dia)) {
+                door.classList.add('is-opened');
+            }
+        });
+    }
+
+    // 3. Registrar día abierto en Supabase
+    async function registrarProgreso(dia: number) {
+        if (!currentUserId || diasAbiertos.includes(dia)) return;
+
+        diasAbiertos.push(dia);
+        actualizarUI();
+
+        await supabase
+            .from('adviento_progreso')
+            .upsert(
+                {
+                    user_id: currentUserId,
+                    dias_abiertos: diasAbiertos,
+                    updated_at: new Date().toISOString()
+                },
+                { onConflict: 'user_id' }
+            );
+    }
+
+    // 4. Evento de clic en cualquier puerta
+    document.querySelectorAll('.circus-door').forEach((door) => {
+        door.addEventListener('click', async () => {
+            const dia = Number((door as HTMLElement).dataset.dia);
+            if (!modal || !modalBadge || !modalTitle || !modalDesc || !modalMediaBox || !modalImage || !modalDownloadBtn) return;
+
+            const recompensa = recompensasCache.get(dia);
+
+            // Caso A: Aún no publicado en Supabase
+            if (!recompensa || !recompensa.publicado) {
+                modalBadge.textContent = `PUERTA ${dia} DE 25`;
+                modalTitle.textContent = '¡Todavía cerrada!';
+                modalDesc.textContent = `La sorpresa del día ${dia} aún se está preparando tras bambalinas en la carpa de Aldán. ¡Vuelve pronto para abrirla!`;
+                modalMediaBox.style.display = 'none';
+                modalDownloadBtn.style.display = 'none';
+                modal.showModal();
+                return;
+            }
+
+            // Caso B: Recompensa disponible -> mostrar y guardar progreso
+            modalBadge.textContent = `${recompensa.subtitulo || 'REGALO'} • DÍA ${dia}`;
+            modalTitle.textContent = recompensa.titulo;
+            modalDesc.textContent = recompensa.descripcion || '';
+
+            if (recompensa.imagen_url) {
+                modalImage.src = recompensa.imagen_url;
+                modalImage.alt = recompensa.titulo;
+                modalMediaBox.style.display = 'flex';
+            } else {
+                modalMediaBox.style.display = 'none';
+            }
+
+            if (recompensa.descarga_url) {
+                modalDownloadBtn.href = recompensa.descarga_url;
+                modalDownloadBtn.textContent = recompensa.texto_boton || 'Descargar recompensa';
+                modalDownloadBtn.style.display = 'inline-block';
+            } else {
+                modalDownloadBtn.style.display = 'none';
+            }
+
+            modal.showModal();
+            await registrarProgreso(dia);
+        });
+    });
+
+    closeBtn?.addEventListener('click', () => modal?.close());
+    modal?.addEventListener('click', (e) => {
+        if (e.target === modal) modal.close();
+    });
+
+    initAdviento();
+    </script> //
+
+
+<style>
+    .advent-page {
+        background-color: #da3434;
+        min-width: fit-content;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .advent-status-bar {
+        width: 100%;
+        max-width: 1650px;
+        padding: 0.85rem 2rem;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        box-sizing: border-box;
+    }
+
+    .progress-badge {
+        background: #0b0b0e00;
+        border: 2px solid #f7d060;
+        color: #ffffff;
+        padding: 0.4rem 1.1rem;
+        border-radius: 999px;
+        font-size: 0.9rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0);
+    }
+
+    .progress-badge strong {
+        color: #f7d060;
+    }
+
+    /* Escenario base */
+    .circus-stage {
+        position: relative;
+        width: 100%;
+        max-width: 1920px;
+        user-select: none;
+    }
+
+    .circus-bg-img {
+        display: block;
+        width: 100%;
+        height: auto;
+        pointer-events: none;
+    }
+
+    /* En PC mostramos desktop-stage y ocultamos mobile-stage */
+    .desktop-stage {
+        display: block;
+    }
+
+    .mobile-stage {
+        display: none;
+    }
+
+    /* Botones invisibles posicionados sobre cada puerta */
+    .circus-door {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        background: transparent;
+        border: 2px solid transparent;
+        border-radius: 6px;
+        cursor: pointer;
+        padding: 0;
+        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s, box-shadow 0.2s, border-color 0.2s;
+    }
+
+    .circus-door:hover,
+    .circus-door:focus-visible {
+        transform: translate(-50%, -50%) scale(1.1);
+        background-color: rgba(255, 255, 255, 0.18);
+        border-color: hsla(45, 90%, 67%, 0);
+        box-shadow: 0 0 18px rgba(247, 208, 96, 0.85);
+        z-index: 15;
+        outline: none;
+    }
+
+    .circus-door.is-available {
+        box-shadow: 0 0 14px #f7d16000;
+        border-color: #f7d16000;
+    }
+
+    .circus-door.is-opened {
+        background-color: #0b0b0e00;
+        border-color: hsla(197, 86%, 55%, 0);
+    }
+
+    .door-check {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: #f7d060;
+        color: #0b0b0e;
+        font-size: 0.7rem;
+        font-weight: bold;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+    }
+
+    .circus-door.is-opened .door-check {
+        display: flex;
+    }
+
+    /* --- POP-UP MODAL --- */
+    .reward-modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        margin: 0;
+        border: none;
+        background: transparent;
+        padding: 0;
+        width: 92%;
+        max-width: 490px;
+        z-index: 9999;
+    }
+
+    .reward-modal::backdrop {
+        background: rgba(11, 11, 14, 0.84);
+        backdrop-filter: blur(6px);
+    }
+
+    .modal-card {
+        position: relative;
+        background: #141418;
+        border: 2px solid #14b3ee;
+        border-radius: 24px;
+        padding: 2.2rem 1.8rem;
+        text-align: center;
+        color: #ffffff;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.85);
+        animation: popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes popIn {
+        from { opacity: 0; transform: scale(0.92); }
+        to { opacity: 1; transform: scale(1); }
+    }
+
+    .close-btn {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #0b0b0e;
+        border: 1px solid #333;
+        color: #a0a0a5;
+        font-size: 1rem;
+        cursor: pointer;
+    }
+
+    .close-btn:hover {
+        background: #d82d2d;
+        color: #ffffff;
+        border-color: #d82d2d;
+    }
+
+    .modal-badge {
+        display: inline-block;
+        background: hsla(45, 90%, 67%, 0);
+        color: hsl(0, 0%, 100%);
+        font-size: 0.75rem;
+        font-weight: 800;
+        padding: 0.25rem 0.85rem;
+        border-radius: 999px;
+        letter-spacing: 1px;
+        margin-bottom: 0.6rem;
+    }
+
+    .modal-card h2 {
+        font-family: var(--font-title, sans-serif);
+        font-size: 1.9rem;
+        color: #ffffff;
+        margin: 0 0 1rem 0;
+    }
+
+    .modal-media {
+        background: hsla(240, 12%, 5%, 0);
+        border-radius: 16px;
+        padding: 0.75rem;
+        margin-bottom: 1.2rem;
+        display: flex;
+        justify-content: center;
+    }
+
+    .modal-media img {
+        max-height: 400px;
+        width: auto;
+        max-width: 100%;
+        border-radius: 10px;
+        object-fit: contain;
+    }
+
+    .modal-card p {
+        color: #e0e0e5;
+        font-size: 1rem;
+        line-height: 1.6;
+        margin: 0 0 1.4rem 0;
+    }
+
+    .download-btn {
+        display: inline-block;
+        background: #14b3ee;
+        color: #ffffff;
+        text-decoration: none;
+        font-weight: 800;
+        padding: 0.85rem 1.8rem;
+        border-radius: 999px;
+        transition: transform 0.2s, background-color 0.2s;
+    }
+
+    .download-btn:hover {
+        background: #ff8552;
+        transform: translateY(-2px);
+    }
+
+    /* --- CAMBIO AUTOMÁTICO EN MÓVIL (≤ 768px) --- */
+    @media (max-width: 768px) {
+        .advent-status-bar {
+            justify-content: center;
+            padding: 0.75rem 1rem;
+        }
+
+        .desktop-stage {
+            display: none;
+        }
+
+        .mobile-stage {
+            display: block;
+            width: 100%;
+        }
+    }
+</style>

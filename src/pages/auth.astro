@@ -1,0 +1,102 @@
+---
+// src/pages/auth.astro
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Acceso | Acaneo Collective">
+    <main class="auth-page">
+        <div class="auth-card">
+            <h1>ACCESO ACANEO</h1>
+            <p>Inicia sesión para sincronizar tus recompensas.</p>
+
+            <form id="authForm">
+                <input type="email" id="email" placeholder="Correo electrónico" required />
+                <input type="password" id="password" placeholder="Contraseña" required />
+                <button type="submit" id="submitBtn" class="auth-btn">Entrar / Registrarse</button>
+            </form>
+            <p id="authMessage"></p>
+            <a href="/" class="back-link">← Volver al inicio</a>
+        </div>
+    </main>
+</Layout>
+
+<script>
+    import { supabase } from '../lib/supabase';
+
+    const form = document.getElementById('authForm') as HTMLFormElement;
+    const message = document.getElementById('authMessage') as HTMLElement;
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = (document.getElementById('email') as HTMLInputElement).value;
+        const password = (document.getElementById('password') as HTMLInputElement).value;
+
+        // Intentar iniciar sesión
+        let { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+        // Si el usuario no existe, lo registramos automáticamente
+        if (error) {
+            const signUpRes = await supabase.auth.signUp({ email, password });
+            if (signUpRes.error) {
+                message.textContent = signUpRes.error.message;
+                message.style.color = '#eb7443';
+                return;
+            } else {
+                message.textContent = '¡Cuenta creada! Revisa tu correo o ya puedes entrar.';
+                message.style.color = '#29b7ef';
+                return;
+            }
+        }
+
+        if (data.session) {
+            window.location.href = '/adviento'; // Redirigir al calendario al entrar
+        }
+    });
+</script>
+
+<style>
+    .auth-page {
+        background-color: #0b0b0e;
+        color: #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 2rem;
+    }
+    .auth-card {
+        background: #141418;
+        border: 2px solid #29b7ef;
+        padding: 2.5rem;
+        border-radius: 20px;
+        width: 100%;
+        max-width: 400px;
+        text-align: center;
+    }
+    input {
+        width: 100%;
+        padding: 0.8rem;
+        margin: 0.5rem 0;
+        background: #0b0b0e;
+        border: 1px solid #333;
+        color: #fff;
+        border-radius: 8px;
+    }
+    .auth-btn {
+        width: 100%;
+        background: #eb7443;
+        color: #fff;
+        border: none;
+        padding: 0.8rem;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+        margin-top: 1rem;
+    }
+    .back-link {
+        display: block;
+        margin-top: 1.5rem;
+        color: #29b7ef;
+        text-decoration: none;
+    }
+</style>

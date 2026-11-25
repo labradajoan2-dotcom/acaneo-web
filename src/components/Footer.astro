@@ -1,130 +1,213 @@
-<footer id="contacto" class="footer">
+---
+// src/components/Footer.astro
+---
+
+<footer class="site-footer">
+    <!-- Capa de tinte azul sobre la ilustración de fondo -->
+    <div class="footer-overlay"></div>
+
     <div class="footer-container">
+        <!-- Columna 1: Logo y Copyright -->
         <div class="footer-brand">
-            <img src="/logo.png" alt="Acaneo Collective" class="footer-logo" />
-            <p class="copyright-text">Acaneo Collective® All rights reserved.</p>
+            <a href="/" class="footer-logo-link" aria-label="Inicio Acaneo Collective">
+                <img src="/logo.png" alt="Acaneo Collective" class="footer-logo" />
+            </a>
+            <p class="copyright">Acaneo Collective® All rights reserved.</p>
         </div>
 
-        <div class="footer-social">
-            <a href="https://www.instagram.com/acaneo_collective?srtk=MXRkbHh3ZGtmb3hydQ==" target="_blank" aria-label="Instagram" class="social-icon">
-                <img src="/icon-instagram.png" alt="Instagram" class="social-img" />
+        <!-- Columna 2: Redes Sociales (Instagram, YouTube, Ko-fi) -->
+        <div class="footer-socials">
+            <a 
+                href="https://instagram.com/acaneo_collective" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                aria-label="Instagram de Acaneo Collective"
+                class="social-link"          >
+               <img src="/icon-instagram.png" alt="Acaneo Collective" class="footer-logo" />
             </a>
-            <a href="https://youtube.com/@acaneo_collective?si=7gbt-DOeeup96UEt" target="_blank" aria-label="YouTube" class="social-icon">
-                <img src="/icon-youtube.png" alt="YouTube" class="social-img" />
+
+            <a 
+                href="https://www.youtube.com/@acaneo_collective" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                aria-label="YouTube de Acaneo Collective"
+                class="social-link"
+            >
+                <img src="/icon-youtube.png" alt="Acaneo Collective" class="footer-logo" />
             </a>
-            <a href="https://ko-fi.com/aldan_indieshow" target="_blank" aria-label="Ko-fi" class="social-icon">
-                <img src="/icon-kofi.png" alt="Ko-fi" class="social-img" />
+
+            <a 
+                href="https://ko-fi.com/aldan_indieshow" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                aria-label="Apóyanos en Ko-fi"
+                class="social-link"
+            >
+                <img src="/icon-kofi.png" alt="Acaneo Collective" class="footer-logo" />
             </a>
         </div>
 
-        <div class="footer-nav-grid">
-            <a href="/#tienda" class="btn-footer">NOVEDAD</a>
-            <a href="/#categoria" class="btn-footer">CATEGORÍAS</a>
-            <a href="/#serie" class="btn-footer">ALDÁN</a>
-            <a href="/#servicios" class="btn-footer">SERVICIOS</a>
-        </div>
+        <!-- Columna 3: Botones de navegación -->
+        <nav class="footer-links" aria-label="Enlaces del pie de página">
+		    <a href="/#serie" class="footer-btn">ALDÁN</a>
+            <a href="/archivo" class="footer-btn">ARCHIVO</a>
+			<a href="/#servicios" class="footer-btn">SERVICIOS</a>
+            <a href="/contacto" class="footer-btn">CONTACTO</a>
+            
+        </nav>
     </div>
-
-    <style>
-	.footer {
-		background-image: url('/footer-bg.png');
-		background-size: cover;
-		background-position: center;
-		background-repeat: no-repeat;
-		padding: 4rem 2rem;
-		width: 100%;
-	}
-	.footer-container {
-		max-width: 1400px;
-		margin: 0 auto;
-		display: grid;
-		grid-template-columns: 1fr auto 1fr;
-		align-items: center;
-		gap: 3rem;
-	}
-	.footer-brand {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
-		gap: 0.8rem;
-	}
-	.footer-logo {
-		max-height: 100px;
-		width: auto;
-		display: block;
-	}
-	.copyright-text {
-		font-family: var(--font-body);
-		color: #ffffff;
-		font-size: 0.95rem;
-		font-weight: 600;
-		letter-spacing: 0.5px;
-	}
-	.footer-social {
-		display: flex;
-		align-items: center;
-		gap: 1.2rem;
-		justify-content: center;
-		margin-bottom: -10rem;
-	}
-	.social-icon {
-		width: 48px;
-		height: 48px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		text-decoration: none;
-		transition: transform 0.2s ease;
-	}
-	.social-icon:hover {
-		transform: scale(1.1);
-	}
-	.social-img {
-		width: 100%;
-		height: 100%;
-		object-fit: contain;
-		display: block;
-	}
-	.footer-nav-grid {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 1rem;
-		justify-self: end;
-		width: 120%;
-		max-width: 380px;
-	}
-	.btn-footer {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 0.8rem 1.5rem;
-		border: 2px solid #ffffff;
-		border-radius: 12px;
-		color: #ffffff;
-		font-family: var(--font-title);
-		font-size: 1.1rem;
-		letter-spacing: 1px;
-		text-decoration: none;
-		transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
-		text-align: center;
-	}
-	.btn-footer:hover {
-		background-color: #ffffff;
-		color: #29b7ef;
-		transform: translateY(-2px);
-	}
-
-	@media(max-width: 900px) {
-		.footer-container {
-			grid-template-columns: 1fr;
-			justify-items: center;
-			text-align: center;
-			gap: 2.5rem;
-		}
-		.footer-brand { align-items: center; }
-		.footer-nav-grid { justify-self: center; }
-	}
-</style>
-
-
 </footer>
+
+<style>
+    .site-footer {
+        position: relative;
+        width: 100%;
+        background-color: #1da2db85;
+        background-image: url('/footer-bg.png'); /* Ajusta el nombre si tu imagen de fondo se llama distinto */
+        background-size: cover;
+        background-position: center;
+        color: #ffffff;
+        overflow: hidden;
+        margin: 0;
+    }
+
+    .footer-overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+    }
+
+    /* --- ESCRITORIO (PC) --- */
+    .footer-container {
+        position: relative;
+        z-index: 2;
+        max-width: 1550px;
+        margin: 0 auto;
+        padding: 3.5rem 2.5rem;
+        display: grid;
+        grid-template-columns: 1.2fr auto 1.2fr;
+        align-items: center;
+        gap: 2rem;
+        box-sizing: border-box;
+    }
+
+    /* Logo y Copyright */
+    .footer-brand {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .footer-logo {
+        height: 68px;
+        width: auto;
+        display: block;
+    }
+
+    .copyright {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #ffffff;
+    }
+
+    /* Redes Sociales */
+    .footer-socials {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1.75rem;
+    }
+
+    .social-link {
+        color: #ffffff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .social-link:hover {
+        transform: translateY(-3px) scale(1.08);
+        opacity: 0.9;
+    }
+
+    /* Botones 2x2 */
+    .footer-links {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(150px, 1fr));
+        gap: 0.9rem;
+        justify-self: end;
+    }
+
+    .footer-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.85rem 1.4rem;
+        border: 2px solid #ffffff;
+        border-radius: 14px;
+        color: #ffffff;
+        text-decoration: none;
+        font-family: var(--font-title, sans-serif);
+        font-size: 1.15rem;
+        font-weight: 700;
+        letter-spacing: 0.8px;
+        text-align: center;
+        transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+    }
+
+    .footer-btn:hover {
+        background-color: #ffffff;
+        color: #1da1db;
+        transform: translateY(-2px);
+    }
+
+    /* --- MÓVIL (≤ 768px): Flujo vertical limpio sin solapamientos --- */
+    @media (max-width: 768px) {
+        .footer-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 2.75rem 1.25rem 5.5rem 1.25rem;
+            gap: 1.6rem;
+        }
+
+        .footer-brand {
+            align-items: center;
+        }
+
+        .footer-logo {
+            height: 62px;
+        }
+
+        .copyright {
+            font-size: 0.9rem;
+        }
+
+        .footer-socials {
+            position: static;
+            width: 100%;
+            gap: 2rem;
+            margin: 0.2rem 0;
+        }
+
+        .footer-links {
+            width: 100%;
+            max-width: 420px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.85rem;
+            justify-self: stretch;
+        }
+
+        .footer-btn {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 0.85rem 0.5rem;
+            font-size: 1.05rem;
+        }
+    }
+</style>

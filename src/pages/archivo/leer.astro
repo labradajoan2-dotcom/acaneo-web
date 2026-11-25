@@ -1,0 +1,435 @@
+---
+// src/pages/archivo/leer.astro
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+---
+
+<Layout title="Artículo | Archivo de Aldán">
+    <Header />
+    <main class="article-page">
+        <div id="articleLoader" class="article-status">
+            Cargando artículo...
+        </div>
+
+        <article id="articleContent" hidden>
+            <!-- Cabecera Hero a ancho completo con degradado a blanco y título encima -->
+            <header class="article-hero-banner">
+                <img id="artImage" src="" alt="" class="hero-bg-img" />
+                <div class="hero-gradient-overlay"></div>
+
+                <a href="/archivo" class="back-to-archive">← Volver al Archivo</a>
+
+                <div class="hero-text-overlay">
+                    <h1 id="artTitle"></h1>
+                    <time id="artDate" class="art-date"></time>
+                </div>
+            </header>
+
+            <!-- Cuerpo del artículo y noticias relacionadas centrados -->
+            <div class="article-wrapper">
+                <div id="artText" class="article-text"></div>
+
+                <section id="relatedSection" class="related-section" hidden>
+                    <h2 class="related-heading">Noticias relacionadas</h2>
+                    <div id="relatedGrid" class="related-grid"></div>
+                </section>
+            </div>
+        </article>
+    </main>
+    <Footer />
+</Layout>
+
+<script>
+    import { supabase } from '../../lib/supabase';
+
+    interface Articulo {
+        id: string;
+        slug: string;
+        titulo: string;
+        categoria: string | null;
+        imagen_url: string;
+        contenido?: string;
+        fecha_publicacion: string;
+    }
+
+    const loader = document.getElementById('articleLoader');
+    const articleContent = document.getElementById('articleContent');
+    const artImage = document.getElementById('artImage') as HTMLImageElement | null;
+    const artCategory = document.getElementById('artCategory');
+    const artDate = document.getElementById('artDate');
+    const artTitle = document.getElementById('artTitle');
+    const artText = document.getElementById('artText');
+
+    const relatedSection = document.getElementById('relatedSection');
+    const relatedGrid = document.getElementById('relatedGrid');
+
+    function formatearFecha(iso: string): string {
+        const fecha = new Date(iso);
+        return fecha.toLocaleDateString('es-ES', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+    }
+
+    async function cargarDetalleArticulo() {
+        const params = new URLSearchParams(window.location.search);
+        const slug = params.get('slug');
+
+        if (!slug) {
+            window.location.href = '/archivo';
+            return;
+        }
+
+        const { data: articulo, error } = await supabase
+            .from('archivo_articulos')
+            .select('*')
+            .eq('slug', slug)
+            .eq('publicado', true)
+            .maybeSingle();
+
+        if (error || !articulo) {
+            if (loader) loader.textContent = 'Este artículo no existe o aún no ha sido publicado.';
+            return;
+        }
+
+        document.title = `${articulo.titulo} | Archivo de Aldán`;
+
+        if (artImage) {
+            artImage.src = articulo.imagen_url;
+            artImage.alt = articulo.titulo;
+        }
+        if (artCategory) artCategory.textContent = articulo.categoria || 'NOTICIA';
+        if (artDate) artDate.textContent = `Publicado el ${formatearFecha(articulo.fecha_publicacion)}`;
+        if (artTitle) artTitle.textContent = articulo.titulo;
+
+        // Renderizar párrafos e imágenes intercaladas
+        if (artText) {
+            artText.innerHTML = '';
+            const bloques = (articulo.contenido || '').split(/\n+/).filter((b: string) => b.trim() !== '');
+            const regexImagen = /^!\[(.*?)\]\((https?:\/\/[^\s)]+)\)$/;
+
+            bloques.forEach((bloque: string) => {
+                const limpio = bloque.trim();
+                const matchImg = limpio.match(regexImagen);
+
+                if (matchImg) {
+                    const captionText = matchImg[1].trim();
+                    const imgUrl = matchImg[2].trim();
+
+                    const figure = document.createElement('figure');
+                    figure.className = 'article-inline-figure';
+
+                    const img = document.createElement('img');
+                    img.src = imgUrl;
+                    img.alt = captionText || articulo.titulo;
+                    img.loading = 'lazy';
+                    figure.appendChild(img);
+
+                    if (captionText) {
+                        const figcaption = document.createElement('figcaption');
+                        figcaption.textContent = captionText;
+                        figure.appendChild(figcaption);
+                    }
+
+                    artText.appendChild(figure);
+                } else {
+                    const p = document.createElement('p');
+                    p.textContent = limpio;
+                    artText.appendChild(p);
+                }
+            });
+        }
+
+        if (loader) loader.style.display = 'none';
+        if (articleContent) articleContent.hidden = false;
+
+        // Cargar hasta 3 noticias relacionadas
+        const { data: relacionadas } = await supabase
+            .from('archivo_articulos')
+            .select('id, slug, titulo, categoria, imagen_url, fecha_publicacion')
+            .eq('publicado', true)
+            .neq('id', articulo.id)
+            .order('fecha_publicacion', { ascending: false })
+            .limit(3);
+
+        if (relacionadas && relacionadas.length > 0 && relatedSection && relatedGrid) {
+            relatedGrid.innerHTML = '';
+            relacionadas.forEach((rel: Articulo) => {
+                const card = document.createElement('a');
+                card.href = `/archivo/leer?slug=${encodeURIComponent(rel.slug)}`;
+                card.className = 'rel-card';
+                card.innerHTML = `
+                    <div class="rel-thumb">
+                        <img src="${rel.imagen_url}" alt="${rel.titulo}" loading="lazy" />
+                    </div>
+                    <div class="rel-body">
+                        ${rel.categoria ? `<span class="rel-tag">${rel.categoria}</span>` : ''}
+                        <h3>${rel.titulo}</h3>
+                    </div>
+                `;
+                relatedGrid.appendChild(card);
+            });
+            relatedSection.hidden = false;
+        }
+    }
+
+    cargarDetalleArticulo();
+</script>
+
+<style>
+    .article-page {
+        width: 100%;
+        min-height: 85dvh;
+        background-color: #ffffff;
+        color: #141418;
+        padding: 0 0 5rem 0;
+        box-sizing: border-box;
+    }
+
+    .article-status {
+        text-align: center;
+        padding: 6rem 1rem;
+        color: #6b6b76;
+        font-size: 1.1rem;
+    }
+
+    /* --- HERO BANNER A ANCHO COMPLETO CON DEGRADADO A BLANCO --- */
+    .article-hero-banner {
+        position: relative;
+        width: 100%;
+        height: clamp(420px, 64vh, 660px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background-color: hsl(0, 0%, 100%);
+    }
+
+    .hero-bg-img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        display: block;
+        z-index: 1;
+    }
+
+    /* Capa de oscurecimiento suave en el centro + fundido limpio a blanco (#ffffff) abajo */
+    .hero-gradient-overlay {
+        position: absolute;
+        inset: -2px;
+        z-index: 2;
+        background: linear-gradient(
+            180deg,
+            rgba(11, 11, 14, 0.35) 0%,
+            rgba(11, 11, 14, 0.45) 48%,
+            rgb(255, 255, 255) 82%,
+            #ffffff 100%
+        );
+    }
+
+    .back-to-archive {
+        position: absolute;
+        top: 1.5rem;
+        left: 2rem;
+        z-index: 4;
+        color: #ffffff;
+        background: rgba(11, 11, 14, 0.45);
+        backdrop-filter: blur(6px);
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        padding: 0.45rem 1rem;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 0.9rem;
+        transition: background-color 0.2s, color 0.2s;
+    }
+
+    .back-to-archive:hover {
+        background-color: #ffffff;
+        color: #29b7ef;
+    }
+
+    /* Título, categoría y fecha centrados sobre la imagen */
+    .hero-text-overlay {
+        position: relative;
+        z-index: 3;
+        max-width: 860px;
+        padding: 0 1.5rem;
+        text-align: center;
+        color: #ffffff;
+        transform: translateY(-8%);
+    }
+
+
+    .hero-text-overlay h1 {
+        font-family: var(--font-title, 'Fjalla One', sans-serif);
+        font-size: clamp(2.2rem, 5.2vw, 4rem);
+        line-height: 1.1;
+        color: #ffffff;
+        margin: 0 0 0.75rem 0;
+        text-shadow: 0 4px 20px rgba(0, 0, 0, 0.65);
+    }
+
+    .art-date {
+        display: block;
+        font-family: var(--font-body, 'Epilogue', sans-serif);
+        font-size: 0.98rem;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.92);
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.65);
+    }
+
+    /* --- CONTENEDOR DE LECTURA --- */
+    .article-wrapper {
+        max-width: 840px;
+        margin: -2px auto 0 auto;
+        padding: 1.5rem 1.5rem 0 1.5rem;
+    }
+
+    .article-text {
+        font-family: var(--font-body, 'Epilogue', sans-serif);
+        font-size: 1.14rem;
+        line-height: 1.85;
+        color: #2c2c35;
+    }
+
+    :global(.article-text p) {
+        margin: 0 0 1.5rem 0;
+    }
+
+    /* Imágenes intercaladas dentro del artículo */
+    :global(.article-inline-figure) {
+        margin: 2.2rem 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    :global(.article-inline-figure img) {
+        width: 100%;
+        max-height: 560px;
+        object-fit: contain;
+        border-radius: 16px;
+        background-color: #f6f6f9;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+        display: block;
+    }
+
+    :global(.article-inline-figure figcaption) {
+        margin-top: 0.65rem;
+        font-size: 0.9rem;
+        color: #6b6b76;
+        text-align: center;
+        font-style: italic;
+    }
+
+    /* --- NOTICIAS RELACIONADAS --- */
+    .related-section {
+        margin-top: 4.5rem;
+        padding-top: 2.5rem;
+        border-top: 2px solid #f0f0f3;
+    }
+
+    .related-heading {
+        font-family: var(--font-title, 'Fjalla One', sans-serif);
+        font-size: 1.9rem;
+        color: #141418;
+        margin: 0 0 1.5rem 0;
+        text-transform: uppercase;
+    }
+
+    .related-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+    }
+
+    :global(.rel-card) {
+        display: flex;
+        flex-direction: column;
+        background: #ffffff;
+        border: 1px solid #e6e6ec;
+        border-radius: 14px;
+        overflow: hidden;
+        text-decoration: none;
+        color: inherit;
+        transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    :global(.rel-card:hover) {
+        transform: translateY(-4px);
+        border-color: #29b7ef;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    :global(.rel-thumb) {
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        overflow: hidden;
+        background: #f4f4f7;
+    }
+
+    :global(.rel-thumb img) {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    :global(.rel-body) {
+        padding: 1rem;
+    }
+
+    :global(.rel-tag) {
+        display: block;
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: #eb7443;
+        text-transform: uppercase;
+        margin-bottom: 0.3rem;
+    }
+
+    :global(.rel-body h3) {
+        font-family: var(--font-title, 'Fjalla One', sans-serif);
+        font-size: 1.04rem;
+        line-height: 1.25;
+        margin: 0;
+        color: #141418;
+    }
+
+    @media (max-width: 768px) {
+        .article-hero-banner {
+            height: clamp(360px, 54vh, 480px);
+        }
+
+        .back-to-archive {
+            top: 1rem;
+            left: 1rem;
+            font-size: 0.82rem;
+            padding: 0.4rem 0.8rem;
+        }
+
+        .hero-text-overlay {
+            transform: translateY(-4%);
+        }
+
+        .article-wrapper {
+            padding: 8rem 3rem 3rem 3rem;
+        }
+
+        .article-text {
+            font-size: 1.02rem;
+        }
+
+        .related-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.9rem;
+        }
+    }
+</style>

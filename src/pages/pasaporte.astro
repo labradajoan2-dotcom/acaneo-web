@@ -1,0 +1,1605 @@
+---
+// src/pages/pasaporte.astro
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout title="Pasaporte Aldanero | Aldán - Acaneo Collective">
+    <Header />
+    <main class="passport-page">
+        <div class="passport-container">
+            <header class="passport-header">
+                <span class="kicker">DOCUMENTO OFICIAL DE TRÁNSITO</span>
+                <h1>PASAPORTE ALDANEANO</h1>
+                <p>Completa tus datos para crear tu pasaporte aldaneano y toca el lomo para abrirlo.</p>
+            </header>
+
+            <div class="passport-workspace">
+                <!-- Columna izquierda: Formulario de emisión -->
+                <form id="passportForm" class="passport-form">
+                    <div id="existingPassportBanner" class="existing-banner" hidden>
+                        <p id="existingPassportText"></p>
+                    </div>
+
+                    <div class="field-group">
+                        <label for="inputNombre">Nombre(s) y Apellido(s)</label>
+                        <input
+                            type="text"
+                            id="inputNombre"
+                            name="nombre"
+                            maxlength="48"
+                            required
+                        />
+                    </div>
+
+                    <div class="field-group">
+                        <label for="inputEmail">Correo Electrónico</label>
+                        <input
+                            type="email"
+                            id="inputEmail"
+                            name="email"
+                            required
+                        />
+
+                        <label class="checkbox-row" for="inputNewsletter">
+                            <input
+                                type="checkbox"
+                                id="inputNewsletter"
+                                name="newsletter"
+                            />
+                            <span>Quiero recibir noticias relacionadas al mundo de Aldán, estrenos y novedades.</span>
+                        </label>
+                    </div>
+
+                    <!-- =========================================================
+                         FUNCIÓN OPCIONAL: FOTO DEL USUARIO (DRAG & DROP + SELECTOR)
+                         Para desactivarla: pon HABILITAR_FOTO_USUARIO = false
+                         en el <script> (y si quieres, oculta/borra este bloque).
+                    ========================================================== -->
+                    <div class="field-group" id="bloqueFotoUsuario">
+                        <label for="inputFoto">Foto o Avatar (Opcional)</label>
+                        <input
+                            type="file"
+                            id="inputFoto"
+                            accept="image/png, image/jpeg, image/webp"
+                            class="sr-file-input"
+                        />
+
+                        <div
+                            id="dropZoneFoto"
+                            class="dropzone-box"
+                            role="button"
+                            tabindex="0"
+                            aria-label="Arrastra una imagen aquí o haz clic para seleccionarla"
+                        >
+                            <div id="dropZoneEmpty" class="dropzone-empty">
+                                <span class="dropzone-title">Arrastra tu imagen aquí</span>
+                                <span class="dropzone-action">o haz clic para seleccionar archivo</span>
+                                <span class="dropzone-formats">PNG, JPG o WEBP</span>
+                            </div>
+
+                            <div id="dropZonePreview" class="dropzone-preview" hidden>
+                                <img id="dropZoneThumb" src="" alt="Vista previa de tu foto" />
+                                <div class="dropzone-meta">
+                                    <span id="dropZoneFileName">imagen.jpg</span>
+                                    <div class="dropzone-buttons">
+                                        <button type="button" id="changePhotoBtn" class="mini-action-btn">
+                                            Cambiar
+                                        </button>
+                                        <button type="button" id="clearPhotoBtn" class="mini-action-btn danger">
+                                            Quitar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ================= FIN FUNCIÓN FOTO USUARIO ================ -->
+
+                    <button type="submit" id="submitBtn" class="emit-btn">
+                        Emitir Pasaporte
+                    </button>
+
+                    <button type="button" id="downloadBtn" class="download-btn">
+                        Descargar Página 4 (PNG)
+                    </button>
+
+                    <div id="formFeedback" class="feedback-msg" hidden></div>
+                </form>
+
+                <!-- Columna derecha: Libreta interactiva -->
+                <div class="book-stage-wrapper">
+                    <div class="book-stage" id="bookStage" data-mode="spine">
+                        <!-- Imagen 1: Solo el lomo -->
+                        <button
+                            type="button"
+                            class="spine-view"
+                            id="spineView"
+                            aria-label="Abrir pasaporte desde el lomo"
+                        >
+                            <img
+                                id="spineImg"
+                                src="/pasaporte/pagina-1.jpg"
+                                alt="Lomo del Pasaporte Aldanero"
+                                draggable="false"
+                            />
+                        </button>
+
+                        <!-- Imágenes 2 a 13: Páginas interiores (doble en PC, 1 sola en móvil) -->
+                        <div class="pages-view" id="pagesView" hidden>
+                            <button
+                                type="button"
+                                class="edge-zone edge-left"
+                                id="prevEdgeBtn"
+                                aria-label="Página anterior"
+                            >
+                                <span>‹</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                class="edge-zone edge-right"
+                                id="nextEdgeBtn"
+                                aria-label="Página siguiente"
+                            >
+                                <span>›</span>
+                            </button>
+
+                            <!-- PC: Doble página -->
+                            <div class="spread-desktop" id="spreadDesktop">
+                                <div class="page-panel page-left" id="deskLeftPanel"></div>
+                                <div class="book-crease" aria-hidden="true"></div>
+                                <div class="page-panel page-right" id="deskRightPanel"></div>
+                            </div>
+
+                            <!-- Móvil: Siempre una sola página -->
+                            <div class="single-mobile" id="singleMobile">
+                                <div class="page-panel page-single" id="mobSinglePanel"></div>
+                            </div>
+                        </div>
+
+                        <!-- Imagen 14: Solo la contraportada -->
+                        <div class="backcover-view" id="backcoverView" hidden>
+                            <button
+                                type="button"
+                                class="edge-zone edge-left"
+                                id="backFromCoverBtn"
+                                aria-label="Volver a las páginas"
+                            >
+                                <span>‹</span>
+                            </button>
+                            <img
+                                id="backcoverImg"
+                                src="/pasaporte/pagina-14.jpg"
+                                alt="Contraportada del Pasaporte Aldanero"
+                                draggable="false"
+                            />
+                        </div>
+                    </div>
+
+                    <div class="book-status-bar">
+                        <span id="bookStepLabel">Lomo (Imagen 1) · Toca para abrir</span>
+                        <button type="button" id="resetBookBtn" class="mini-link-btn">Volver al lomo</button>
+                    </div>
+
+                    <!-- Canvas oculto para componer páginas dinámicas (Pág. 4 y sellos en Págs. 6 a 11) -->
+                    <canvas id="passportCanvas" width="667" height="1050" hidden></canvas>
+                </div>
+            </div>
+        </div>
+    </main>
+    <Footer />
+</Layout>
+
+<script>
+    import { supabase } from '../lib/supabase';
+
+    // =========================================================================
+    // INTERRUPTOR DE FOTO DEL USUARIO (true = activa | false = desactivada)
+    // =========================================================================
+    const HABILITAR_FOTO_USUARIO = true;
+
+    const PASAPORTE_IMAGENES = [
+        '/pasaporte/pagina-1.jpg',
+        '/pasaporte/pagina-2.jpg',
+        '/pasaporte/pagina-3.jpg',
+        '/pasaporte/pagina-4.jpg',  // <-- Imagen 4 (índice 3): datos del usuario
+        '/pasaporte/pagina-5.jpg',
+        '/pasaporte/pagina-6.jpg',  // <-- Imagen 6 (índice 5): zona de sellos
+        '/pasaporte/pagina-7.jpg',  // <-- Imagen 7 (índice 6): zona de sellos
+        '/pasaporte/pagina-8.jpg',  // <-- Imagen 8 (índice 7): zona de sellos
+        '/pasaporte/pagina-9.jpg',  // <-- Imagen 9 (índice 8): zona de sellos
+        '/pasaporte/pagina-10.jpg', // <-- Imagen 10 (índice 9): zona de sellos
+        '/pasaporte/pagina-11.jpg', // <-- Imagen 11 (índice 10): zona de sellos
+        '/pasaporte/pagina-12.jpg',
+        '/pasaporte/pagina-13.jpg',
+        '/pasaporte/pagina-14.jpg',
+    ];
+
+    const INDICE_PAGINA_USUARIO = 3;
+    const PAGINA_SELLO_INICIO = 6;
+    const PAGINA_SELLO_FIN = 11;
+
+    // Posiciones relativas (0..1) por página de sello (6..11) para estampar PNGs sin superponerlos
+    const RANURAS_SELLOS_POR_PAGINA: Record<number, Array<{ xRatio: number; yRatio: number; sizeRatio: number }>> = {
+        6:  [{ xRatio: 0.35, yRatio: 0.25, sizeRatio: 0.24 }, { xRatio: 0.65, yRatio: 0.55, sizeRatio: 0.24 }],
+        7:  [{ xRatio: 0.35, yRatio: 0.25, sizeRatio: 0.24 }, { xRatio: 0.65, yRatio: 0.55, sizeRatio: 0.24 }],
+        8:  [{ xRatio: 0.35, yRatio: 0.25, sizeRatio: 0.24 }, { xRatio: 0.65, yRatio: 0.55, sizeRatio: 0.24 }],
+        9:  [{ xRatio: 0.35, yRatio: 0.25, sizeRatio: 0.24 }, { xRatio: 0.65, yRatio: 0.55, sizeRatio: 0.24 }],
+        10: [{ xRatio: 0.35, yRatio: 0.25, sizeRatio: 0.24 }, { xRatio: 0.65, yRatio: 0.55, sizeRatio: 0.24 }],
+        11: [{ xRatio: 0.35, yRatio: 0.25, sizeRatio: 0.24 }, { xRatio: 0.65, yRatio: 0.55, sizeRatio: 0.24 }],
+    };
+
+    const COORDENADAS_PAG4 = {
+        foto: {
+            xRatio: 0.46,
+            yRatio: 0.140,
+            wRatio: 0.38,
+            hRatio: 0.34,
+            radio: 12,
+        },
+        apellidos:    { xRatio: 0.625, yRatio: 0.278, maxWidthRatio: 0.34 },
+        nombre:       { xRatio: 0.490, yRatio: 0.278, maxWidthRatio: 0.34 },
+        nacionalidad: { xRatio: 0.360, yRatio: 0.278, maxWidthRatio: 0.34 },
+        fecha:        { xRatio: 0.240, yRatio: 0.278, maxWidthRatio: 0.34 },
+        numero:       { xRatio: 0.360, yRatio: 0.665, maxWidthRatio: 0.28 },
+    };
+
+    interface SelloRegistrado {
+        id: string;
+        src: string;
+        pagina: number; // 6..11
+        otorgadoEn?: string;
+    }
+
+    const form = document.getElementById('passportForm') as HTMLFormElement | null;
+    const inputNombre = document.getElementById('inputNombre') as HTMLInputElement | null;
+    const inputEmail = document.getElementById('inputEmail') as HTMLInputElement | null;
+    const inputNewsletter = document.getElementById('inputNewsletter') as HTMLInputElement | null;
+    const inputFoto = document.getElementById('inputFoto') as HTMLInputElement | null;
+    const bloqueFoto = document.getElementById('bloqueFotoUsuario');
+
+    const dropZoneFoto = document.getElementById('dropZoneFoto');
+    const dropZoneEmpty = document.getElementById('dropZoneEmpty');
+    const dropZonePreview = document.getElementById('dropZonePreview');
+    const dropZoneThumb = document.getElementById('dropZoneThumb') as HTMLImageElement | null;
+    const dropZoneFileName = document.getElementById('dropZoneFileName');
+    const changePhotoBtn = document.getElementById('changePhotoBtn');
+    const clearPhotoBtn = document.getElementById('clearPhotoBtn');
+
+    const submitBtn = document.getElementById('submitBtn') as HTMLButtonElement | null;
+    const downloadBtn = document.getElementById('downloadBtn') as HTMLButtonElement | null;
+    const feedback = document.getElementById('formFeedback');
+
+    const existingBanner = document.getElementById('existingPassportBanner');
+    const existingText = document.getElementById('existingPassportText');
+
+    const bookStage = document.getElementById('bookStage');
+    const spineView = document.getElementById('spineView') as HTMLButtonElement | null;
+    const spineImg = document.getElementById('spineImg') as HTMLImageElement | null;
+    const pagesView = document.getElementById('pagesView');
+    const backcoverView = document.getElementById('backcoverView');
+    const backcoverImg = document.getElementById('backcoverImg') as HTMLImageElement | null;
+
+    const deskLeftPanel = document.getElementById('deskLeftPanel');
+    const deskRightPanel = document.getElementById('deskRightPanel');
+    const mobSinglePanel = document.getElementById('mobSinglePanel');
+
+    const prevEdgeBtn = document.getElementById('prevEdgeBtn');
+    const nextEdgeBtn = document.getElementById('nextEdgeBtn');
+    const backFromCoverBtn = document.getElementById('backFromCoverBtn');
+    const resetBookBtn = document.getElementById('resetBookBtn');
+    const bookStepLabel = document.getElementById('bookStepLabel');
+
+    const canvas = document.getElementById('passportCanvas') as HTMLCanvasElement | null;
+    const ctx = canvas?.getContext('2d');
+
+    if (spineImg) spineImg.src = PASAPORTE_IMAGENES[0];
+    if (backcoverImg) backcoverImg.src = PASAPORTE_IMAGENES[PASAPORTE_IMAGENES.length - 1];
+
+    if (!HABILITAR_FOTO_USUARIO && bloqueFoto) {
+        bloqueFoto.style.display = 'none';
+    }
+
+    let numeroPasaporte = 'ALD-XXXX';
+    let fotoImg: HTMLImageElement | null = null;
+    let sesionAnonimaId: string | null = null;
+    let sellosDelPasaporte: SelloRegistrado[] = [];
+    const cacheImagenesSellos = new Map<string, HTMLImageElement>();
+    const cachePaginasBase = new Map<number, HTMLImageElement>();
+
+    const fechaEmision = new Date().toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+    });
+
+    const pag4BaseImg = new Image();
+    pag4BaseImg.crossOrigin = 'anonymous';
+    pag4BaseImg.src = PASAPORTE_IMAGENES[INDICE_PAGINA_USUARIO];
+    pag4BaseImg.onload = () => {
+        if (canvas && pag4BaseImg.naturalWidth > 0 && pag4BaseImg.naturalHeight > 0) {
+            canvas.width = pag4BaseImg.naturalWidth;
+            canvas.height = pag4BaseImg.naturalHeight;
+        }
+        renderBook();
+    };
+
+    // Precarga de imágenes base de las páginas 6 a 11 (índices 5..10)
+    function precargarPaginasSellos() {
+        for (let p = PAGINA_SELLO_INICIO; p <= PAGINA_SELLO_FIN; p++) {
+            const idx = p - 1;
+            const src = PASAPORTE_IMAGENES[idx];
+            if (!src || cachePaginasBase.has(p)) continue;
+
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                cachePaginasBase.set(p, img);
+                if (currentStep > 0 && currentStep < COVER_STEP) {
+                    renderBook();
+                }
+            };
+            img.src = src;
+            cachePaginasBase.set(p, img);
+        }
+    }
+
+    precargarPaginasSellos();
+
+    const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
+    const prefersReducedMotion = () =>
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const TOTAL_INTERIOR = PASAPORTE_IMAGENES.length - 2;
+    const COVER_STEP = TOTAL_INTERIOR + 1;
+    let currentStep = 0;
+
+    function mostrarFeedback(tipo: 'success' | 'error', mensaje: string) {
+        if (!feedback) return;
+        feedback.className = `feedback-msg ${tipo}`;
+        feedback.textContent = mensaje;
+        feedback.hidden = false;
+    }
+
+    function triggerEaseTransition() {
+        if (prefersReducedMotion() || !bookStage) return;
+        bookStage.classList.remove('is-fading');
+        void bookStage.offsetWidth;
+        bookStage.classList.add('is-fading');
+        window.setTimeout(() => {
+            bookStage.classList.remove('is-fading');
+        }, 260);
+    }
+
+    // --- Newsletter en Supabase ---
+    async function suscribirNewsletterSiProcede(email: string) {
+        if (!inputNewsletter?.checked) return;
+
+        const { error } = await supabase
+            .from('newsletter_suscriptores')
+            .upsert(
+                { email, origen: 'pasaporte_aldanero' },
+                { onConflict: 'email' }
+            );
+
+        if (error) {
+            console.warn('Error al registrar en newsletter_suscriptores:', error.message);
+        }
+    }
+
+    // --- Sistema de sellos (Páginas 6 a 11) ---
+    function cargarImagenSello(src: string): Promise<HTMLImageElement | null> {
+        return new Promise((resolve) => {
+            const cached = cacheImagenesSellos.get(src);
+            if (cached && cached.complete && cached.naturalWidth > 0) {
+                resolve(cached);
+                return;
+            }
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                cacheImagenesSellos.set(src, img);
+                resolve(img);
+            };
+            img.onerror = () => resolve(null);
+            img.src = src;
+        });
+    }
+
+    function elegirPaginaSelloDisponible(paginaDeseada?: number): number {
+        if (
+            typeof paginaDeseada === 'number' &&
+            paginaDeseada >= PAGINA_SELLO_INICIO &&
+            paginaDeseada <= PAGINA_SELLO_FIN
+        ) {
+            return paginaDeseada;
+        }
+        for (let p = PAGINA_SELLO_INICIO; p <= PAGINA_SELLO_FIN; p++) {
+            const countEnPag = sellosDelPasaporte.filter((s) => s.pagina === p).length;
+            const capacidad = RANURAS_SELLOS_POR_PAGINA[p]?.length ?? 2;
+            if (countEnPag < capacidad) return p;
+        }
+        return PAGINA_SELLO_INICIO;
+    }
+
+    async function persistirSellosEnSupabase(pasaporteId: string, sellos: SelloRegistrado[]) {
+        if (!pasaporteId || pasaporteId === 'ALD-XXXX') return;
+        try {
+            await supabase
+                .from('pasaportes_aldaneros')
+                .update({ sellos })
+                .eq('numero_pasaporte', pasaporteId);
+        } catch (err) {
+            console.warn('No se pudo persistir sellos en pasaportes_aldaneros:', err);
+        }
+    }
+
+    async function otorgarSelloPasaporte(params: {
+        numeroPasaporte?: string;
+        id: string;
+        src: string;
+        pagina?: number;
+    }) {
+        const targetPasaporte = (params.numeroPasaporte || numeroPasaporte).trim();
+        if (!targetPasaporte || targetPasaporte === 'ALD-XXXX') {
+            console.warn('No hay un número de pasaporte emitido para estampar el sello.');
+            return false;
+        }
+
+        const paginaAsignada = elegirPaginaSelloDisponible(params.pagina);
+        const yaTiene = sellosDelPasaporte.some(
+            (s) => s.id === params.id && s.pagina === paginaAsignada
+        );
+
+        if (!yaTiene) {
+            sellosDelPasaporte.push({
+                id: params.id,
+                src: params.src,
+                pagina: paginaAsignada,
+                otorgadoEn: new Date().toISOString(),
+            });
+        }
+
+        await cargarImagenSello(params.src);
+        await persistirSellosEnSupabase(targetPasaporte, sellosDelPasaporte);
+
+        if (currentStep > 0 && currentStep < COVER_STEP) {
+            renderBook();
+            triggerEaseTransition();
+        }
+        return true;
+    }
+
+    (window as any).otorgarSelloPasaporte = otorgarSelloPasaporte;
+
+    function separarNombreYApellidos(textoCompleto: string): { nombre: string; apellidos: string } {
+        const limpio = textoCompleto.trim().toUpperCase();
+        if (!limpio) return { nombre: 'VIAJERO', apellidos: 'ALDANERO' };
+
+        const partes = limpio.split(/\s+/);
+
+        if (partes.length === 1) {
+            return { nombre: partes[0], apellidos: '—' };
+        }
+
+        if (partes.length === 2) {
+            return { nombre: partes[0], apellidos: partes[1] };
+        }
+
+        if (partes.length === 3) {
+            return { nombre: partes[0], apellidos: partes.slice(1).join(' ') };
+        }
+
+        return {
+            nombre: partes.slice(0, 2).join(' '),
+            apellidos: partes.slice(2).join(' '),
+        };
+    }
+
+    function dibujarTextoRotado(
+        context: CanvasRenderingContext2D,
+        texto: string,
+        x: number,
+        y: number,
+        maxWidth: number,
+        font: string,
+        color: string
+    ) {
+        context.save();
+        context.translate(x, y);
+        context.rotate(Math.PI / 2);
+        context.font = font;
+        context.fillStyle = color;
+        context.textAlign = 'left';
+        context.textBaseline = 'top';
+        context.fillText(texto, 0, 0, maxWidth);
+        context.restore();
+    }
+
+    function dibujarFotoRotadaEnCanvas(
+        context: CanvasRenderingContext2D,
+        img: HTMLImageElement,
+        centerX: number,
+        centerY: number,
+        w: number,
+        h: number,
+        radio: number
+    ) {
+        context.save();
+        context.translate(centerX, centerY);
+        context.rotate(Math.PI / 2);
+
+        const x = -w / 2;
+        const y = -h / 2;
+
+        context.beginPath();
+        context.roundRect(x, y, w, h, radio);
+        context.clip();
+
+        const imgRatio = img.width / img.height;
+        const boxRatio = w / h;
+        let drawW = w;
+        let drawH = h;
+        let offsetX = x;
+        let offsetY = y;
+
+        if (imgRatio > boxRatio) {
+            drawW = h * imgRatio;
+            offsetX = x - (drawW - w) / 2;
+        } else {
+            drawH = w / imgRatio;
+            offsetY = y - (drawH - h) / 2;
+        }
+
+        context.drawImage(img, offsetX, offsetY, drawW, drawH);
+        context.restore();
+    }
+
+    function renderizarCanvasPag4(): boolean {
+        if (!canvas || !ctx) return false;
+
+        const W = canvas.width;
+        const H = canvas.height;
+        const escala = W / 667;
+
+        ctx.clearRect(0, 0, W, H);
+
+        if (pag4BaseImg.complete && pag4BaseImg.naturalWidth > 0) {
+            ctx.drawImage(pag4BaseImg, 0, 0, W, H);
+        } else {
+            ctx.fillStyle = '#d8dfd9';
+            ctx.fillRect(0, 0, W, H);
+        }
+
+        if (HABILITAR_FOTO_USUARIO && fotoImg) {
+            dibujarFotoRotadaEnCanvas(
+                ctx,
+                fotoImg,
+                W * COORDENADAS_PAG4.foto.xRatio,
+                H * COORDENADAS_PAG4.foto.yRatio,
+                W * COORDENADAS_PAG4.foto.wRatio,
+                H * COORDENADAS_PAG4.foto.hRatio,
+                COORDENADAS_PAG4.foto.radio * escala
+            );
+        }
+
+        const { nombre, apellidos } = separarNombreYApellidos(inputNombre?.value || '');
+        const fuenteDato = `bold ${Math.round(19 * escala)}px "Fjalla One", sans-serif`;
+        const fuenteCodigo = `bold ${Math.round(20 * escala)}px monospace`;
+        const colorTexto = '#1d2522';
+
+        dibujarTextoRotado(
+            ctx,
+            apellidos,
+            W * COORDENADAS_PAG4.apellidos.xRatio,
+            H * COORDENADAS_PAG4.apellidos.yRatio,
+            H * COORDENADAS_PAG4.apellidos.maxWidthRatio,
+            fuenteDato,
+            colorTexto
+        );
+
+        dibujarTextoRotado(
+            ctx,
+            nombre,
+            W * COORDENADAS_PAG4.nombre.xRatio,
+            H * COORDENADAS_PAG4.nombre.yRatio,
+            H * COORDENADAS_PAG4.nombre.maxWidthRatio,
+            fuenteDato,
+            colorTexto
+        );
+
+        dibujarTextoRotado(
+            ctx,
+            'ALDANERO / ALDAN',
+            W * COORDENADAS_PAG4.nacionalidad.xRatio,
+            H * COORDENADAS_PAG4.nacionalidad.yRatio,
+            H * COORDENADAS_PAG4.nacionalidad.maxWidthRatio,
+            fuenteDato,
+            colorTexto
+        );
+
+        dibujarTextoRotado(
+            ctx,
+            fechaEmision,
+            W * COORDENADAS_PAG4.fecha.xRatio,
+            H * COORDENADAS_PAG4.fecha.yRatio,
+            H * COORDENADAS_PAG4.fecha.maxWidthRatio,
+            fuenteDato,
+            colorTexto
+        );
+
+        dibujarTextoRotado(
+            ctx,
+            numeroPasaporte,
+            W * COORDENADAS_PAG4.numero.xRatio,
+            H * COORDENADAS_PAG4.numero.yRatio,
+            H * COORDENADAS_PAG4.numero.maxWidthRatio,
+            fuenteCodigo,
+            '#1b4f3e'
+        );
+
+        return true;
+    }
+
+    function obtenerDataUrlSeguro(): string | null {
+        if (!canvas) return null;
+        renderizarCanvasPag4();
+        try {
+            return canvas.toDataURL('image/png');
+        } catch (err) {
+            console.warn('No se pudo exportar canvas a PNG (CORS/tainted):', err);
+            return null;
+        }
+    }
+
+    function generarImagenPaginaConSellos(numeroVisible: number, sellos: SelloRegistrado[]): string {
+        if (!canvas || !ctx || sellos.length === 0) {
+            return PASAPORTE_IMAGENES[numeroVisible - 1];
+        }
+
+        const baseImg = cachePaginasBase.get(numeroVisible);
+        const W = baseImg && baseImg.naturalWidth > 0 ? baseImg.naturalWidth : canvas.width;
+        const H = baseImg && baseImg.naturalHeight > 0 ? baseImg.naturalHeight : canvas.height;
+        canvas.width = W;
+        canvas.height = H;
+
+        ctx.clearRect(0, 0, W, H);
+
+        if (baseImg && baseImg.complete && baseImg.naturalWidth > 0) {
+            ctx.drawImage(baseImg, 0, 0, W, H);
+        } else {
+            ctx.fillStyle = '#e6e8e4';
+            ctx.fillRect(0, 0, W, H);
+        }
+
+        const ranuras = RANURAS_SELLOS_POR_PAGINA[numeroVisible] || [];
+        sellos.forEach((sello, idx) => {
+            const imgSello = cacheImagenesSellos.get(sello.src);
+            if (!imgSello || !imgSello.complete || imgSello.naturalWidth === 0) {
+                cargarImagenSello(sello.src).then(() => renderBook());
+                return;
+            }
+            const ranura = ranuras[idx % Math.max(1, ranuras.length)] || {
+                xRatio: 0.5,
+                yRatio: 0.5,
+                sizeRatio: 0.24,
+            };
+            const size = Math.min(W, H) * ranura.sizeRatio;
+            const cx = W * ranura.xRatio;
+            const cy = H * ranura.yRatio;
+
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(Math.PI / 2);
+            ctx.drawImage(imgSello, -size / 2, -size / 2, size, size);
+            ctx.restore();
+        });
+
+        try {
+            return canvas.toDataURL('image/png');
+        } catch {
+            return PASAPORTE_IMAGENES[numeroVisible - 1];
+        }
+    }
+
+    function descargarPngDirecto() {
+        renderizarCanvasPag4();
+        if (!canvas) return;
+
+        canvas.toBlob((blob) => {
+            if (!blob) {
+                const dataUrl = obtenerDataUrlSeguro();
+                if (!dataUrl) {
+                    mostrarFeedback(
+                        'error',
+                        'Tu navegador bloqueó la exportación directa del PNG. Haz clic derecho sobre la Página 4 y elige "Guardar imagen como".'
+                    );
+                    return;
+                }
+                const link = document.createElement('a');
+                link.href = dataUrl;
+                link.download = `pasaporte-${numeroPasaporte.toLowerCase()}.png`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                return;
+            }
+
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `pasaporte-${numeroPasaporte.toLowerCase()}.png`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+        }, 'image/png');
+    }
+
+    downloadBtn?.addEventListener('click', descargarPngDirecto);
+
+    function renderInteriorPageHtml(interiorPos: number): string {
+        const imgArrayIndex = interiorPos;
+        const numeroVisible = imgArrayIndex + 1;
+        const isUserDataPage = imgArrayIndex === INDICE_PAGINA_USUARIO;
+        const sellosPagina = sellosDelPasaporte.filter((s) => s.pagina === numeroVisible);
+
+        let imgSrc = PASAPORTE_IMAGENES[imgArrayIndex];
+        if (isUserDataPage) {
+            imgSrc = obtenerDataUrlSeguro() || PASAPORTE_IMAGENES[imgArrayIndex];
+        } else if (
+            numeroVisible >= PAGINA_SELLO_INICIO &&
+            numeroVisible <= PAGINA_SELLO_FIN &&
+            sellosPagina.length > 0
+        ) {
+            imgSrc = generarImagenPaginaConSellos(numeroVisible, sellosPagina);
+        }
+
+        return `
+            <div class="page-sheet-img">
+                <img
+                    src="${imgSrc}"
+                    alt="Página ${numeroVisible} del Pasaporte Aldanero"
+                    draggable="false"
+                />
+            </div>
+        `;
+    }
+
+    function renderBook() {
+        if (!bookStage || !spineView || !pagesView || !backcoverView || !bookStepLabel) return;
+
+        if (currentStep <= 0) {
+            currentStep = 0;
+            bookStage.dataset.mode = 'spine';
+            spineView.hidden = false;
+            pagesView.hidden = true;
+            backcoverView.hidden = true;
+            bookStepLabel.textContent = '';
+            return;
+        }
+
+        if (currentStep >= COVER_STEP) {
+            currentStep = COVER_STEP;
+            bookStage.dataset.mode = 'backcover';
+            spineView.hidden = true;
+            pagesView.hidden = true;
+            backcoverView.hidden = false;
+            bookStepLabel.textContent = ``;
+            return;
+        }
+
+        bookStage.dataset.mode = 'pages';
+        spineView.hidden = true;
+        pagesView.hidden = false;
+        backcoverView.hidden = true;
+
+        if (isMobile()) {
+            if (mobSinglePanel) {
+                mobSinglePanel.innerHTML = renderInteriorPageHtml(currentStep);
+            }
+            bookStepLabel.textContent = `Página ${currentStep + 1} de ${PASAPORTE_IMAGENES.length}`;
+        } else {
+            const leftPos = currentStep % 2 === 0 ? currentStep - 1 : currentStep;
+            const rightPos = leftPos + 1;
+
+            if (deskLeftPanel) {
+                deskLeftPanel.innerHTML = renderInteriorPageHtml(leftPos);
+            }
+            if (deskRightPanel) {
+                deskRightPanel.innerHTML =
+                    rightPos <= TOTAL_INTERIOR
+                        ? renderInteriorPageHtml(rightPos)
+                        : `<div class="page-sheet-empty"></div>`;
+            }
+            bookStepLabel.textContent = ` `;
+        }
+    }
+
+    function goNext() {
+        if (currentStep === 0) {
+            currentStep = 1;
+        } else if (isMobile()) {
+            currentStep = Math.min(currentStep + 1, COVER_STEP);
+        } else {
+            const currentLeft = currentStep % 2 === 0 ? currentStep - 1 : currentStep;
+            const nextLeft = currentLeft + 2;
+            currentStep = nextLeft > TOTAL_INTERIOR ? COVER_STEP : nextLeft;
+        }
+        renderBook();
+        triggerEaseTransition();
+    }
+
+    function goPrev() {
+        if (currentStep === COVER_STEP) {
+            currentStep = isMobile() ? TOTAL_INTERIOR : Math.max(1, TOTAL_INTERIOR - 1);
+        } else if (isMobile()) {
+            currentStep = Math.max(0, currentStep - 1);
+        } else {
+            const currentLeft = currentStep % 2 === 0 ? currentStep - 1 : currentStep;
+            currentStep = currentLeft <= 1 ? 0 : currentLeft - 2;
+        }
+        renderBook();
+        triggerEaseTransition();
+    }
+
+    spineView?.addEventListener('click', () => {
+        currentStep = 1;
+        renderBook();
+        triggerEaseTransition();
+    });
+
+    nextEdgeBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        goNext();
+    });
+
+    prevEdgeBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        goPrev();
+    });
+
+    backFromCoverBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        goPrev();
+    });
+
+    resetBookBtn?.addEventListener('click', () => {
+        currentStep = 0;
+        renderBook();
+        triggerEaseTransition();
+    });
+
+    window.addEventListener('resize', renderBook);
+
+    // --- Manejo de foto: drag & drop + selección dentro del campo ---
+    function limpiarFotoSeleccionada() {
+        fotoImg = null;
+        if (inputFoto) inputFoto.value = '';
+        if (dropZoneThumb) dropZoneThumb.src = '';
+        if (dropZoneFileName) dropZoneFileName.textContent = '';
+        if (dropZonePreview) dropZonePreview.hidden = true;
+        if (dropZoneEmpty) dropZoneEmpty.hidden = false;
+        renderBook();
+    }
+
+    function procesarArchivoFoto(file: File | undefined) {
+        if (!HABILITAR_FOTO_USUARIO) return;
+        if (!file || !file.type.startsWith('image/')) {
+            limpiarFotoSeleccionada();
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const url = ev.target?.result as string;
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                fotoImg = img;
+                if (dropZoneThumb) dropZoneThumb.src = url;
+                if (dropZoneFileName) dropZoneFileName.textContent = file.name;
+                if (dropZoneEmpty) dropZoneEmpty.hidden = true;
+                if (dropZonePreview) dropZonePreview.hidden = false;
+                renderBook();
+            };
+            img.src = url;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    dropZoneFoto?.addEventListener('click', () => {
+        if (!HABILITAR_FOTO_USUARIO) return;
+        inputFoto?.click();
+    });
+
+    dropZoneFoto?.addEventListener('keydown', (e) => {
+        if (!HABILITAR_FOTO_USUARIO) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            inputFoto?.click();
+        }
+    });
+
+    changePhotoBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        inputFoto?.click();
+    });
+
+    clearPhotoBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        limpiarFotoSeleccionada();
+    });
+
+    dropZoneFoto?.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZoneFoto.classList.add('is-dragover');
+    });
+
+    dropZoneFoto?.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+        dropZoneFoto.classList.add('is-dragover');
+    });
+
+    dropZoneFoto?.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!dropZoneFoto.contains(e.relatedTarget as Node)) {
+            dropZoneFoto.classList.remove('is-dragover');
+        }
+    });
+
+    dropZoneFoto?.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZoneFoto.classList.remove('is-dragover');
+        const file = e.dataTransfer?.files?.[0];
+        procesarArchivoFoto(file);
+    });
+
+    inputFoto?.addEventListener('change', () => {
+        const file = inputFoto.files?.[0];
+        procesarArchivoFoto(file);
+    });
+
+    // --- Sesión anónima y detección de pasaporte previo ---
+    async function asegurarSesionAnonima(): Promise<string | null> {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData.session?.user?.id) {
+            return sessionData.session.user.id;
+        }
+
+        const { data: anonData, error } = await supabase.auth.signInAnonymously();
+        if (error) {
+            console.warn('No se pudo iniciar sesión anónima:', error.message);
+            return null;
+        }
+        return anonData.user?.id ?? null;
+    }
+
+    async function comprobarPasaporteExistente() {
+        sesionAnonimaId = await asegurarSesionAnonima();
+        if (!sesionAnonimaId) return;
+
+        try {
+            const { data } = await supabase.functions.invoke('emitir-pasaporte', {
+                body: { auth_user_id: sesionAnonimaId },
+            });
+
+            if (data?.pasaporte?.numero_pasaporte) {
+                numeroPasaporte = data.pasaporte.numero_pasaporte;
+                if (Array.isArray(data.pasaporte.sellos)) {
+                    sellosDelPasaporte = data.pasaporte.sellos;
+                    sellosDelPasaporte.forEach((s) => cargarImagenSello(s.src));
+                }
+                if (inputNombre && data.pasaporte.nombre) {
+                    inputNombre.value = data.pasaporte.nombre;
+                }
+                if (inputEmail && data.pasaporte.email) {
+                    inputEmail.value = data.pasaporte.email;
+                }
+
+                if (existingBanner && existingText) {
+                    existingText.textContent = `Ya tienes un pasaporte vinculado a esta sesión: ${numeroPasaporte}.`;
+                    existingBanner.hidden = false;
+                }
+
+                currentStep = 0;
+                renderBook();
+            }
+        } catch (err) {
+            console.warn('Sin pasaporte previo o función aún no desplegada:', err);
+        }
+    }
+
+    inputNombre?.addEventListener('input', () => {
+        if (currentStep > 0 && currentStep < COVER_STEP) {
+            renderBook();
+        }
+    });
+
+    form?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!inputNombre || !inputEmail || !submitBtn) return;
+
+        const nombre = inputNombre.value.trim();
+        const email = inputEmail.value.trim().toLowerCase();
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Sellando pasaporte...';
+        if (feedback) feedback.hidden = true;
+
+        try {
+            await suscribirNewsletterSiProcede(email);
+
+            if (!sesionAnonimaId) {
+                sesionAnonimaId = await asegurarSesionAnonima();
+            }
+
+            const { data, error } = await supabase.functions.invoke('emitir-pasaporte', {
+                body: {
+                    nombre,
+                    email,
+                    auth_user_id: sesionAnonimaId,
+                },
+            });
+
+            if (error) {
+                throw new Error(error.message || 'Error en la Edge Function emitir-pasaporte');
+            }
+
+            if (!data?.numero_pasaporte) {
+                throw new Error('La función no devolvió un número de pasaporte.');
+            }
+
+            numeroPasaporte = data.numero_pasaporte;
+            if (Array.isArray(data?.pasaporte?.sellos)) {
+                sellosDelPasaporte = data.pasaporte.sellos;
+                sellosDelPasaporte.forEach((s) => cargarImagenSello(s.src));
+            }
+
+            if (existingBanner && existingText) {
+                existingText.textContent = `Ya tienes un pasaporte vinculado a esta sesión: ${numeroPasaporte}.`;
+                existingBanner.hidden = false;
+            }
+
+            currentStep = INDICE_PAGINA_USUARIO;
+            renderBook();
+            triggerEaseTransition();
+
+            mostrarFeedback(
+                'success',
+                data?.ya_existia
+                    ? `Recuperamos tu pasaporte ${numeroPasaporte} vinculado a ${email}. Ya puedes descargar tu PNG.`
+                    : `¡Pasaporte ${numeroPasaporte} emitido correctamente! Ya puedes descargar tu PNG.`
+            );
+        } catch (err: any) {
+            console.error('Error emitiendo pasaporte:', err);
+            currentStep = INDICE_PAGINA_USUARIO;
+            renderBook();
+            triggerEaseTransition();
+            mostrarFeedback(
+                'error',
+                `No se pudo completar el registro en servidor (${err?.message || 'revisa Edge Function emitir-pasaporte y secrets en Supabase'}). Aun así puedes descargar tu Página 4 en PNG.`
+            );
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Emitir Pasaporte';
+        }
+    });
+
+    renderBook();
+    comprobarPasaporteExistente();
+</script>
+
+<style>
+    .passport-page {
+        min-height: 85dvh;
+        background-color: hsl(0, 0%, 100%);
+        color: #ffffff;
+        padding: 4rem 1.5rem 5rem 1.5rem;
+    }
+
+    .passport-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .passport-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        color:#141418;
+    }
+
+    .kicker {
+        display: inline-block;
+        color: #29b7ef; ;
+        padding: 0.25rem 0.9rem;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+    }
+
+    .passport-header h1 {
+        font-family: var(--font-title, 'Fjalla One', sans-serif);
+        font-size: clamp(2.4rem, 5vw, 3.8rem);
+        margin: 0 0 -5 0;
+    }
+
+    .passport-header p {
+        color: hsl(0, 0%, 24%);
+        font-size: 1.05rem;
+        max-width: 620px;
+        margin: 0 auto;
+    }
+
+    .passport-workspace {
+        display: grid;
+        grid-template-columns: 400px 1fr;
+        gap: 2.2rem;
+        align-items: center;
+    }
+
+    .passport-form {
+        background: #141418;
+        border: 1px solid hsla(240, 11%, 18%, 0);
+        border-radius: 20px;
+        padding: 2.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.50rem;
+    }
+
+    .existing-banner {
+        background: rgba(41, 183, 239, 0.1);
+        border: 1px solid rgba(41, 183, 239, 0.45);
+        border-radius: 12px;
+        padding: 0.85rem 1rem;
+    }
+
+    .existing-banner p {
+        margin: 0;
+        font-size: 0.88rem;
+        color: #d7f2ff;
+        line-height: 1.4;
+    }
+
+    .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .field-group label {
+        font-weight: 500;
+        font-size: 0.92rem;
+    }
+
+    .field-group input[type="text"],
+    .field-group input[type="email"] {
+        background: #0b0b0e;
+        border: 1px solid #32323e;
+        border-radius: 12px;
+        padding: 0.8rem 0.95rem;
+        color: #ffffff;
+        font-size: 0.98rem;
+    }
+
+    .field-group input[type="text"]:focus,
+    .field-group input[type="email"]:focus {
+        outline: none;
+        border-color: #29b7ef;
+    }
+
+    .checkbox-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.55rem;
+        margin-top: 0.35rem;
+        font-size: 0.82rem;
+        color: #c8c8d4;
+        line-height: 1.35;
+        cursor: pointer;
+    }
+
+    .checkbox-row input[type="checkbox"] {
+        margin-top: 0.15rem;
+        accent-color: #29b7ef;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .sr-file-input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .dropzone-box {
+        background: #0b0b0e;
+        border: 1.5px dashed #3b3b4a;
+        border-radius: 14px;
+        padding: 1rem;
+        cursor: pointer;
+        transition: border-color 0.2s, background-color 0.2s, transform 0.15s;
+    }
+
+    .dropzone-box:hover,
+    .dropzone-box:focus-visible {
+        outline: none;
+        border-color: #29b7ef;
+        background: rgba(41, 183, 239, 0.05);
+    }
+
+    .dropzone-box.is-dragover {
+        border-style: solid;
+        border-color: #29b7ef;
+        background: rgba(41, 183, 239, 0.14);
+        transform: scale(1.01);
+    }
+
+    .dropzone-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 0.25rem;
+        padding: 0.35rem 0;
+    }
+
+    .dropzone-title {
+        font-weight: 500;
+        font-size: 0.92rem;
+        color: #ffffff;
+    }
+
+    .dropzone-action {
+        font-size: 0.84rem;
+        font-weight: 600;
+        color: #29b7ef;
+    }
+
+    .dropzone-formats {
+        font-size: 0.74rem;
+        color: #8c8c9a;
+        margin-top: 0.15rem;
+    }
+
+    .dropzone-preview {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+    }
+
+    .dropzone-preview img {
+        width: 54px;
+        height: 68px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 1px solid #29b7ef;
+        flex-shrink: 0;
+    }
+
+    .dropzone-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+        min-width: 0;
+        flex: 1;
+    }
+
+    .dropzone-meta span {
+        font-size: 0.83rem;
+        color: #e6e6ec;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .dropzone-buttons {
+        display: flex;
+        gap: 0.45rem;
+    }
+
+    .mini-action-btn {
+        background: rgba(41, 183, 239, 0.12);
+        border: 1px solid rgba(41, 183, 239, 0.5);
+        color: #bfeaff;
+        border-radius: 7px;
+        padding: 0.25rem 0.6rem;
+        font-size: 0.76rem;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .mini-action-btn:hover {
+        background: #29b7ef;
+        color: #0b0b0e;
+    }
+
+    .mini-action-btn.danger {
+        background: rgba(235, 116, 67, 0.12);
+        border-color: rgba(235, 116, 67, 0.5);
+        color: #ffd0be;
+    }
+
+    .mini-action-btn.danger:hover {
+        background: #eb7443;
+        color: #ffffff;
+    }
+
+    .field-group small {
+        color: #8c8c9a;
+        font-size: 0.8rem;
+    }
+
+    .emit-btn {
+        background: #eb7443;
+        color: #ffffff;
+        border: none;
+        border-radius: 12px;
+        padding: 0.9rem 1.2rem;
+        font-family: var(--font-title, 'Fjalla One', sans-serif);
+        font-size: 1.2rem;
+        cursor: pointer;
+    }
+
+    .emit-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .download-btn {
+        display: block;
+        width: 100%;
+        text-align: center;
+        background: #141418;
+        border: 1px solid #29b7ef;
+        color: #29b7ef;
+        border-radius: 12px;
+        padding: 0.78rem 1rem;
+        font-weight: 700;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: background-color 0.2s, color 0.2s;
+    }
+
+    .download-btn:hover {
+        background: #29b7ef;
+        color: hsl(0, 0%, 100%);
+    }
+
+    .feedback-msg {
+        padding: 0.85rem 1rem;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        line-height: 1.45;
+    }
+
+    .feedback-msg.success {
+        background: rgba(41, 183, 239, 0.14);
+        border: 1px solid #29b7ef;
+        color: #bfeaff;
+    }
+
+    .feedback-msg.error {
+        background: rgba(235, 116, 67, 0.15);
+        border: 1px solid #eb7443;
+        color: #ffd0be;
+    }
+
+    .spine-view[hidden],
+    .pages-view[hidden],
+    .backcover-view[hidden],
+    .dropzone-empty[hidden],
+    .dropzone-preview[hidden] {
+        display: none !important;
+    }
+
+    /* Escenario de la libreta */
+    .book-stage-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        width: 100%;
+    }
+
+    .book-stage {
+        position: relative;
+        width: 100%;
+        min-height: 540px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        perspective: 1400px;
+        opacity: 1;
+        transition: opacity 0.25s ease-in;
+    }
+
+    .book-stage.is-fading {
+        animation: easeInPage 0.25s ease-in;
+    }
+
+    @keyframes easeInPage {
+        0% {
+            opacity: 0.25;
+        }
+        100% {
+            opacity: 1;
+        }
+    }
+
+    .spine-view {
+        background: transparent;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        transition: transform 0.25s ease;
+    }
+
+    .spine-view:hover {
+        transform: translateY(-4px) scale(1.02);
+    }
+
+    .spine-view img {
+        display: block;
+        max-height: 540px;
+        width: auto;
+        border-radius: 8px;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .pages-view {
+        position: relative;
+        width: 100%;
+        max-width: 780px;
+    }
+
+    .spread-desktop {
+        display: grid;
+        grid-template-columns: 1fr 1px 1fr;
+        background: hsl(30, 1%, 62%);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .book-crease {
+        background: linear-gradient(90deg, rgba(0, 0, 0, 0.55), rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.6));
+    }
+
+    .single-mobile {
+        display: none;
+    }
+
+    .page-panel {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    :global(.page-sheet-img) {
+        width: 100%;
+        height: 100%;
+        display: flex;
+    }
+
+    :global(.page-sheet-img img) {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    :global(.page-sheet-empty) {
+        width: 100%;
+        min-height: 460px;
+        background: #181c22;
+    }
+
+    .edge-zone {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 14%;
+        min-width: 40px;
+        background: transparent;
+        border: none;
+        color: #ffffff00;
+        font-size: 2rem;
+        cursor: pointer;
+        z-index: 5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s, color 0.2s;
+    }
+
+    .edge-zone:hover {
+        color: #ffffff;
+    }
+
+    .edge-left {
+        left: 0;
+    }
+
+    .edge-right {
+        right: 0;
+    }
+
+    .backcover-view {
+        position: relative;
+        display: flex;
+        justify-content: center;
+    }
+
+    .backcover-view img {
+        display: block;
+        max-height: 540px;
+        width: auto;
+        border-radius: 10px;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .book-status-bar {
+        position: relative;
+        z-index: 1;
+        padding: 1rem 0.7rem;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        color: hwb(0 23% 77%);
+    }
+
+    .mini-link-btn {
+        background: transparent;
+        border: 1px solid #29b7ef;
+        color: #29b7ef;
+        border-radius: 8px;
+        padding: 0.3rem 0.7rem;
+        font-size: 0.8rem;
+        cursor: pointer;
+    }
+
+    .mini-link-btn:hover {
+        border-color: #29b7ef;
+        background: #29b7ef;
+        color: hsl(0, 0%, 100%);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .book-stage.is-fading {
+            animation: none;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .passport-workspace {
+            grid-template-columns: 1fr;
+        }
+
+        .spread-desktop {
+            display: none;
+        }
+
+        .single-mobile {
+            display: block;
+            max-width: 360px;
+            margin: 0 auto;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.75);
+        }
+    }
+</style>

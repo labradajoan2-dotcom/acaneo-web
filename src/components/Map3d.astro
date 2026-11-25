@@ -1,0 +1,174 @@
+---
+// src/components/Hero3D.astro
+import Viewer3D from './Viewer3D.astro';
+
+export interface Props {
+    modelSrc?: string;
+    alt?: string;
+}
+
+const { 
+    modelSrc = "/models/world.glb", 
+    alt = "Modelo 3D de Aldán - Acaneo Collective" 
+} = Astro.props;
+---
+
+<section class="aldan-section">
+    <div class="world3d">
+        <!-- Columna Izquierda (en escritorio) / Segundo elemento (en móvil) -->
+        <div class="model-column">
+            <Viewer3D src={modelSrc} alt={alt} />
+        </div>
+
+        <!-- Columna Derecha (en escritorio) / Se desglosa en móvil -->
+        <div class="info-column">
+            <h2 class="section-title">Conoce el mundo de Aldán:</h2>
+            
+            <div class="story-wrapper">
+                <div class="story-box">
+                    <p>
+                        Explora a fondo el mundo de Aldán descubriendo qué hay más allá de los muros de la ciudad.
+                    </p>
+                    <p>
+                        Estamos seguro que la apreciarás más después de ver que hay fuera.
+                    </p>
+                </div>
+
+                <div class="cta-wrapper">
+                    <a href="/mapa" class="map-btn">Explorar Mapa</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    /* Contenedor externo con fondo negro de borde a borde */
+    .aldan-section {
+        background-image: url('/bg3dmap.png');
+		background-size: cover;
+        min-height: 85vh;
+        width: 100%;
+        padding: 4rem 0;
+    }
+
+    /* Estructura de escritorio: 2 columnas */
+    .world3d {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-items: center;
+        gap: 3rem;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .model-column {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        width: 100%;
+    }
+
+    .info-column {
+        display: flex;
+        flex-direction: column;
+        gap: 1.2rem;
+        text-align: left;
+    }
+
+    .story-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 1.4rem;
+    }
+
+    .section-title {
+        font-family: var(--font-title);
+        font-size: 3rem;
+        color: #29b7ef;
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    .story-box {
+        background-color: #141418;
+        border: 1px solid #2a2a32;
+        border-left: 4px solid #eb7443;
+        border-radius: 14px;
+        padding: 1.8rem;
+        color: #e0e0e5;
+        font-size: 1rem;
+        line-height: 1.6;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .story-box p {
+        margin: 0 0 1rem 0;
+    }
+
+    .story-box p:last-child {
+        margin-bottom: 0;
+    }
+
+    .map-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background-color: #eb7443;
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 1rem;
+        text-decoration: none;
+        padding: 0.85rem 1.8rem;
+        border-radius: 12px;
+        border: 2px solid #eb7443;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 15px rgba(235, 116, 67, 0.25);
+    }
+
+    .map-btn:hover {
+        background-color: transparent;
+        color: #29b7ef;
+        border-color: #29b7ef;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(41, 183, 239, 0.2);
+    }
+
+    /* Vista Móvil: 1) Título -> 2) Modelo 3D -> 3) Descripción + Botón */
+    @media (max-width: 850px) {
+        .aldan-section {
+            padding: 2.5rem 0;
+        }
+
+        .world3d {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        /* Hace que los hijos de info-column participen directo en el grid padre */
+        .info-column {
+            display: contents;
+        }
+
+        .section-title {
+            order: 1;
+            text-align: center;
+            font-size: 1.9rem;
+        }
+
+        .model-column {
+            order: 2;
+            justify-content: center;
+        }
+
+        .story-wrapper {
+            order: 3;
+        }
+
+        .cta-wrapper {
+            display: flex;
+            justify-content: center;
+        }
+    }
+</style>
