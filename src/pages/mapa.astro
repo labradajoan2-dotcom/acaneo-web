@@ -330,7 +330,7 @@ import { REGIONES_ALDAN } from '../data/regiones';
         padding: 4rem 2rem 3rem 2rem;
         box-sizing: border-box;
         background-color: #0b0b0e;
-        background-image: url('/fondo-mapa.png');
+        background-image: url('/fondo-mapa.jpg');
         background-size: cover;
         background-position: center center;
         background-repeat: no-repeat;
@@ -681,26 +681,26 @@ import { REGIONES_ALDAN } from '../data/regiones';
         }
 
         .modal-card {
-            grid-template-columns: 1fr;
-            grid-template-rows: 220px auto;
-            min-height: auto;
-            max-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            max-height: 88dvh;
         }
 
         .modal-media {
-            min-height: 220px;
-            height: 300px;
+            flex: 0 0 200px;
+            height: 200px;
+            min-height: 200px;
         }
 
         .modal-content {
-            padding: 6.5rem 1.4rem 1.8rem 1.4rem;
-        }
-
-        .close-btn {
-            top: 0.75rem;
-            right: 0.75rem;
-            background: rgba(12, 16, 21, 0.65);
-            color: #ffffff;
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            justify-content: flex-start;
+            padding: 1.5rem 1.4rem 1.8rem 1.4rem;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
         }
     }
 </style>

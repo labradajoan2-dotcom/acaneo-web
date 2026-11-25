@@ -199,6 +199,19 @@ const PUERTAS_MOVIL = [
     let currentUserId: string | null = null;
     let diasAbiertos: number[] = [];
     const recompensasCache = new Map<number, Recompensa>();
+    const ANIO = 2026;
+
+    function diaYaDisponible(dia: number): boolean {
+        // Fecha de hoy en horario de Madrid
+        const [y, m, d] = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' })
+            .format(new Date())
+            .split('-')
+            .map(Number);
+
+        if (y > ANIO) return true;
+        if (y < ANIO) return false;
+        return m === 12 && d >= dia;
+    }
 
     // 1. Sesión anónima silenciosa + carga de recompensas y progreso
     async function initAdviento() {
@@ -241,7 +254,7 @@ const PUERTAS_MOVIL = [
             const dia = Number((door as HTMLElement).dataset.dia);
             const recompensa = recompensasCache.get(dia);
 
-            if (recompensa?.publicado) {
+           if (recompensa?.publicado && diaYaDisponible(dia)) {
                 door.classList.add('is-available');
             }
             if (diasAbiertos.includes(dia)) {
@@ -278,7 +291,7 @@ const PUERTAS_MOVIL = [
             const recompensa = recompensasCache.get(dia);
 
             // Caso A: Aún no publicado en Supabase
-            if (!recompensa || !recompensa.publicado) {
+            if (!recompensa || !recompensa.publicado || !diaYaDisponible(dia)) {
                 modalBadge.textContent = `PUERTA ${dia} DE 25`;
                 modalTitle.textContent = '¡Todavía cerrada!';
                 modalDesc.textContent = `La sorpresa del día ${dia} aún se está preparando tras bambalinas en la carpa de Aldán. ¡Vuelve pronto para abrirla!`;
