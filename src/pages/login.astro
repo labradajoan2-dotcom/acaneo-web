@@ -1,0 +1,278 @@
+---
+// src/pages/login.astro
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout title="Iniciar Sesión | Pasaporte Aldaneano - Acaneo Collective">
+    <Header />
+    <main class="login-page">
+        <div class="login-container">
+            <header class="login-header">
+                <h1 id="loginHeading" class="login-title">Bienvenido a Aldán!</h1>
+                <p class="login-subtitle">
+                    Introduce tu número de pasaporte aldaneano para iniciar sesión.
+                </p>
+            </header>
+
+            <section class="login-card" aria-labelledby="loginHeading">
+                <form id="passportLoginForm" class="login-form">
+                    <label for="passportNumberInput" class="sr-only">
+                        Número de pasaporte aldaneano
+                    </label>
+                    <input
+                        type="text"
+                        id="passportNumberInput"
+                        name="numero_pasaporte"
+                        placeholder="Ej. ALD-1234"
+                        autocomplete="off"
+                        required
+                    />
+                    <button type="submit" id="loginBtn" class="login-btn">
+                        Iniciar sesión
+                    </button>
+                    <p id="loginFeedback" class="login-feedback" hidden></p>
+                </form>
+
+                <p class="create-link-wrap">
+                    <a href="/pasaporte">
+                        Aún no tienes pasaporte? Solicítalo aqui.
+                    </a>
+                </p>
+            </section>
+        </div>
+    </main>
+    <Footer />
+</Layout>
+
+<script>
+    import { supabase } from '../lib/supabase';
+
+    const STORAGE_KEY_PASAPORTE = 'aldan_pasaporte_activo';
+
+    const passportLoginForm = document.getElementById('passportLoginForm') as HTMLFormElement | null;
+    const passportNumberInput = document.getElementById('passportNumberInput') as HTMLInputElement | null;
+    const loginBtn = document.getElementById('loginBtn') as HTMLButtonElement | null;
+    const loginFeedback = document.getElementById('loginFeedback');
+
+    function mostrarError(mensaje: string) {
+        if (!loginFeedback) return;
+        loginFeedback.textContent = mensaje;
+        loginFeedback.hidden = false;
+    }
+
+    function limpiarError() {
+        if (!loginFeedback) return;
+        loginFeedback.textContent = '';
+        loginFeedback.hidden = true;
+    }
+
+    function leerSesionLocal(): any | null {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY_PASAPORTE);
+            return raw ? JSON.parse(raw) : null;
+        } catch {
+            return null;
+        }
+    }
+
+    function guardarSesionLocal(payload: any) {
+        try {
+            localStorage.setItem(STORAGE_KEY_PASAPORTE, JSON.stringify(payload));
+        } catch {
+            // Ignorar si localStorage no está disponible
+        }
+    }
+
+    async function consultarPasaporte(codigo: string) {
+        const normalizado = codigo.trim().toUpperCase();
+        if (!normalizado) return null;
+
+        const { data, error } = await supabase
+            .from('pasaportes_aldaneros')
+            .select('numero_pasaporte, nombre, email, foto_url, sellos, created_at')
+            .ilike('numero_pasaporte', normalizado)
+            .maybeSingle();
+
+        if (error) {
+            console.warn('Error consultando pasaportes_aldaneros:', error.message);
+            return null;
+        }
+
+        if (!data?.numero_pasaporte) return null;
+
+        const local = leerSesionLocal();
+        return {
+            numero_pasaporte: data.numero_pasaporte,
+            nombre: data.nombre,
+            email: data.email,
+            foto_url:
+                data.foto_url ||
+                (local?.numero_pasaporte?.toUpperCase() === normalizado ? local.foto_url : null),
+            sellos: Array.isArray(data.sellos)
+                ? data.sellos
+                : local?.numero_pasaporte?.toUpperCase() === normalizado
+                  ? local.sellos
+                  : [],
+            created_at: data.created_at,
+        };
+    }
+
+    passportLoginForm?.addEventListener('submit', async (e: SubmitEvent) => {
+        e.preventDefault();
+        if (!passportNumberInput || !loginBtn) return;
+
+        limpiarError();
+        const codigo = passportNumberInput.value.trim().toUpperCase();
+        if (!codigo) return;
+
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'Verificando...';
+
+        try {
+            const pasaporte = await consultarPasaporte(codigo);
+            if (!pasaporte) {
+                mostrarError(
+                    'No encontramos un pasaporte con ese número. Verifica el código o créate uno nuevo.'
+                );
+                return;
+            }
+
+            guardarSesionLocal(pasaporte);
+            window.location.href = `/perfil?pasaporte=${encodeURIComponent(pasaporte.numero_pasaporte)}`;
+        } catch {
+            mostrarError('Ocurrió un error al iniciar sesión. Inténtalo de nuevo.');
+        } finally {
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Iniciar sesión';
+        }
+    });
+</script>
+
+<style>
+    .login-page {
+        min-height: 82dvh;
+        background-color: #ffffff;
+        color: #141418;
+        padding: 4rem 1.5rem 5rem 1.5rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .login-container {
+        width: 100%;
+        max-width: 1120px;
+        margin: 0 auto;
+    }
+
+    .login-header {
+        text-align: center;
+        margin-bottom: 2.2rem;
+        color: #141418;
+    }
+
+    .user-kicker {
+        display: inline-block;
+        color: #29b7ef;
+        padding: 0.25rem 0.9rem;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+    }
+
+    .login-title {
+        font-family: var(--font-title, 'Fjalla One', sans-serif);
+        font-size: clamp(2.4rem, 5vw, 3.8rem);
+        margin: 0.15rem 0 0.45rem 0;
+        line-height: 1.1;
+    }
+
+    .login-subtitle {
+        color: hsl(0, 0%, 24%);
+        font-size: 1.05rem;
+        max-width: 560px;
+        margin: 0 auto;
+    }
+
+    .login-card {
+        max-width: 460px;
+        margin: 0 auto;
+        background: #141418;
+        color: #ffffff;
+        border-radius: 22px;
+        padding: 2.4rem 2rem;
+        text-align: center;
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.14);
+    }
+
+    .login-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .login-form input {
+        background: #0b0b0e;
+        border: 1px solid #32323e;
+        border-radius: 12px;
+        padding: 0.85rem 1rem;
+        color: #ffffff;
+        font-size: 1rem;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .login-form input:focus {
+        outline: none;
+        border-color: #29b7ef;
+    }
+
+    .login-btn {
+        background: #eb7443;
+        color: #ffffff;
+        border: none;
+        border-radius: 12px;
+        padding: 0.9rem 1.2rem;
+        font-family: var(--font-title, 'Fjalla One', sans-serif);
+        font-size: 1.2rem;
+        cursor: pointer;
+    }
+
+    .login-btn:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+    }
+
+    .login-feedback {
+        margin: 0.25rem 0 0 0;
+        font-size: 0.88rem;
+        color: #ffd0be;
+    }
+
+    .create-link-wrap {
+        margin: 1.4rem 0 0 0;
+        font-size: 0.92rem;
+    }
+
+    .create-link-wrap a {
+        color: #29b7ef;
+        font-weight: 600;
+        text-decoration: underline;
+    }
+
+    .create-link-wrap a:hover {
+        color: #77d4fa;
+    }
+
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+</style>

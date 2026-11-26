@@ -12,7 +12,7 @@ import Footer from '../components/Footer.astro';
             <header class="passport-header">
                 <span class="kicker">DOCUMENTO OFICIAL DE TRÁNSITO</span>
                 <h1>PASAPORTE ALDANEANO</h1>
-                <p>Completa tus datos para crear tu pasaporte aldaneano y toca el lomo para abrirlo.</p>
+                <p>Completa tus datos para crear tu pasaporte aldaneano.</p>
             </header>
 
             <div class="passport-workspace">
@@ -52,11 +52,7 @@ import Footer from '../components/Footer.astro';
                         </label>
                     </div>
 
-                    <!-- =========================================================
-                         FUNCIÓN OPCIONAL: FOTO DEL USUARIO (DRAG & DROP + SELECTOR)
-                         Para desactivarla: pon HABILITAR_FOTO_USUARIO = false
-                         en el <script> (y si quieres, oculta/borra este bloque).
-                    ========================================================== -->
+                    <!-- FUNCIÓN OPCIONAL: FOTO DEL USUARIO (DRAG & DROP + SELECTOR) -->
                     <div class="field-group" id="bloqueFotoUsuario">
                         <label for="inputFoto">Foto o Avatar (Opcional)</label>
                         <input
@@ -95,7 +91,6 @@ import Footer from '../components/Footer.astro';
                             </div>
                         </div>
                     </div>
-                    <!-- ================= FIN FUNCIÓN FOTO USUARIO ================ -->
 
                     <button type="submit" id="submitBtn" class="emit-btn">
                         Emitir Pasaporte
@@ -126,7 +121,7 @@ import Footer from '../components/Footer.astro';
                             />
                         </button>
 
-                        <!-- Imágenes 2 a 13: Páginas interiores (doble en PC, 1 sola en móvil) -->
+                        <!-- Imágenes 2 a 13: Páginas interiores -->
                         <div class="pages-view" id="pagesView" hidden>
                             <button
                                 type="button"
@@ -183,7 +178,6 @@ import Footer from '../components/Footer.astro';
                         <button type="button" id="resetBookBtn" class="mini-link-btn">Volver al lomo</button>
                     </div>
 
-                    <!-- Canvas oculto para componer páginas dinámicas (Pág. 4 y sellos en Págs. 6 a 11) -->
                     <canvas id="passportCanvas" width="667" height="1050" hidden></canvas>
                 </div>
             </div>
@@ -195,23 +189,22 @@ import Footer from '../components/Footer.astro';
 <script>
     import { supabase } from '../lib/supabase';
 
-    // =========================================================================
-    // INTERRUPTOR DE FOTO DEL USUARIO (true = activa | false = desactivada)
-    // =========================================================================
     const HABILITAR_FOTO_USUARIO = true;
+    const STORAGE_KEY_PASAPORTE = 'aldan_pasaporte_activo';
+    const BUCKET_FOTOS_PASAPORTE = 'fotos-pasaportes';
 
     const PASAPORTE_IMAGENES = [
         '/pasaporte/pagina-1.jpg',
         '/pasaporte/pagina-2.jpg',
         '/pasaporte/pagina-3.jpg',
-        '/pasaporte/pagina-4.jpg',  // <-- Imagen 4 (índice 3): datos del usuario
+        '/pasaporte/pagina-4.jpg',
         '/pasaporte/pagina-5.jpg',
-        '/pasaporte/pagina-6.jpg',  // <-- Imagen 6 (índice 5): zona de sellos
-        '/pasaporte/pagina-7.jpg',  // <-- Imagen 7 (índice 6): zona de sellos
-        '/pasaporte/pagina-8.jpg',  // <-- Imagen 8 (índice 7): zona de sellos
-        '/pasaporte/pagina-9.jpg',  // <-- Imagen 9 (índice 8): zona de sellos
-        '/pasaporte/pagina-10.jpg', // <-- Imagen 10 (índice 9): zona de sellos
-        '/pasaporte/pagina-11.jpg', // <-- Imagen 11 (índice 10): zona de sellos
+        '/pasaporte/pagina-6.jpg',
+        '/pasaporte/pagina-7.jpg',
+        '/pasaporte/pagina-8.jpg',
+        '/pasaporte/pagina-9.jpg',
+        '/pasaporte/pagina-10.jpg',
+        '/pasaporte/pagina-11.jpg',
         '/pasaporte/pagina-12.jpg',
         '/pasaporte/pagina-13.jpg',
         '/pasaporte/pagina-14.jpg',
@@ -221,7 +214,6 @@ import Footer from '../components/Footer.astro';
     const PAGINA_SELLO_INICIO = 6;
     const PAGINA_SELLO_FIN = 11;
 
-    // Posiciones relativas (0..1) por página de sello (6..11) para estampar PNGs sin superponerlos
     const RANURAS_SELLOS_POR_PAGINA: Record<number, Array<{ xRatio: number; yRatio: number; sizeRatio: number }>> = {
         6:  [{ xRatio: 0.35, yRatio: 0.25, sizeRatio: 0.24 }, { xRatio: 0.65, yRatio: 0.55, sizeRatio: 0.24 }],
         7:  [{ xRatio: 0.35, yRatio: 0.25, sizeRatio: 0.24 }, { xRatio: 0.65, yRatio: 0.55, sizeRatio: 0.24 }],
@@ -239,18 +231,25 @@ import Footer from '../components/Footer.astro';
             hRatio: 0.34,
             radio: 12,
         },
-        apellidos:    { xRatio: 0.625, yRatio: 0.278, maxWidthRatio: 0.34 },
-        nombre:       { xRatio: 0.490, yRatio: 0.278, maxWidthRatio: 0.34 },
-        nacionalidad: { xRatio: 0.360, yRatio: 0.278, maxWidthRatio: 0.34 },
-        fecha:        { xRatio: 0.240, yRatio: 0.278, maxWidthRatio: 0.34 },
-        numero:       { xRatio: 0.360, yRatio: 0.665, maxWidthRatio: 0.28 },
+        apellidos:    { xRatio: 0.640, yRatio: 0.320, maxWidthRatio: 0.50 },
+        nombre:       { xRatio: 0.490, yRatio: 0.320, maxWidthRatio: 0.50 },
+        nacionalidad: { xRatio: 0.320, yRatio: 0.320, maxWidthRatio: 0.50 },
+        fecha:        { xRatio: 0.150, yRatio: 0.320, maxWidthRatio: 0.50 },
+        numero:       { xRatio: 0.340, yRatio: 0.715, maxWidthRatio: 0.50 },
     };
 
     interface SelloRegistrado {
         id: string;
         src: string;
-        pagina: number; // 6..11
+        pagina: number;
         otorgadoEn?: string;
+    }
+
+    interface OpcionesCompresion {
+        maxAncho?: number;
+        maxAlto?: number;
+        calidad?: number;
+        formato?: 'image/jpeg' | 'image/webp';
     }
 
     const form = document.getElementById('passportForm') as HTMLFormElement | null;
@@ -304,6 +303,7 @@ import Footer from '../components/Footer.astro';
 
     let numeroPasaporte = 'ALD-XXXX';
     let fotoImg: HTMLImageElement | null = null;
+    let archivoFotoSeleccionado: File | null = null;
     let sesionAnonimaId: string | null = null;
     let sellosDelPasaporte: SelloRegistrado[] = [];
     const cacheImagenesSellos = new Map<string, HTMLImageElement>();
@@ -326,7 +326,6 @@ import Footer from '../components/Footer.astro';
         renderBook();
     };
 
-    // Precarga de imágenes base de las páginas 6 a 11 (índices 5..10)
     function precargarPaginasSellos() {
         for (let p = PAGINA_SELLO_INICIO; p <= PAGINA_SELLO_FIN; p++) {
             const idx = p - 1;
@@ -373,23 +372,92 @@ import Footer from '../components/Footer.astro';
         }, 260);
     }
 
-    // --- Newsletter en Supabase ---
-    async function suscribirNewsletterSiProcede(email: string) {
-        if (!inputNewsletter?.checked) return;
+    async function comprimirImagenEnCliente(
+        archivo: File,
+        opciones: OpcionesCompresion = {}
+    ): Promise<File> {
+        const {
+            maxAncho = 900,
+            maxAlto = 900,
+            calidad = 0.78,
+            formato = 'image/jpeg',
+        } = opciones;
 
-        const { error } = await supabase
-            .from('newsletter_suscriptores')
-            .upsert(
-                { email, origen: 'pasaporte_aldanero' },
-                { onConflict: 'email' }
-            );
+        if (archivo.size <= 180 * 1024) {
+            return archivo;
+        }
 
-        if (error) {
-            console.warn('Error al registrar en newsletter_suscriptores:', error.message);
+        const bitmap = await createImageBitmap(archivo);
+
+        try {
+            let { width, height } = bitmap;
+            const ratio = Math.min(1, maxAncho / width, maxAlto / height);
+            width = Math.max(1, Math.round(width * ratio));
+            height = Math.max(1, Math.round(height * ratio));
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = width;
+            tempCanvas.height = height;
+
+            const tempCtx = tempCanvas.getContext('2d');
+            if (!tempCtx) {
+                return archivo;
+            }
+
+            if (formato === 'image/jpeg') {
+                tempCtx.fillStyle = '#ffffff';
+                tempCtx.fillRect(0, 0, width, height);
+            }
+
+            tempCtx.drawImage(bitmap, 0, 0, width, height);
+
+            const blob = await new Promise<Blob | null>((resolve) => {
+                tempCanvas.toBlob(resolve, formato, calidad);
+            });
+
+            if (!blob || blob.size >= archivo.size) {
+                return archivo;
+            }
+
+            const extension = formato === 'image/webp' ? 'webp' : 'jpg';
+            const nombreBase = archivo.name.replace(/\.[^/.]+$/, '');
+
+            return new File([blob], `${nombreBase}.${extension}`, {
+                type: formato,
+                lastModified: Date.now(),
+            });
+        } finally {
+            bitmap.close();
         }
     }
 
-    // --- Sistema de sellos (Páginas 6 a 11) ---
+    // --- Newsletter en Supabase (con fallback si no hay constraint UNIQUE o falla upsert) ---
+    async function suscribirNewsletterSiProcede(email: string): Promise<void> {
+        if (!inputNewsletter?.checked) return;
+
+        const payload = {
+            email: email.trim().toLowerCase(),
+            origen: 'pasaporte_aldanero',
+        };
+
+        const { error: upsertError } = await supabase
+            .from('newsletter_suscriptores')
+            .upsert(payload, { onConflict: 'email' });
+
+        if (!upsertError) return;
+
+        console.warn('Upsert en newsletter_suscriptores falló, intentando insert:', upsertError.message);
+
+        const { error: insertError } = await supabase
+            .from('newsletter_suscriptores')
+            .insert(payload);
+
+        // Código 23505 = duplicado (ya estaba suscrito), lo consideramos válido
+        if (insertError && insertError.code !== '23505') {
+            throw new Error(`No se pudo suscribir al newsletter: ${insertError.message}`);
+        }
+    }
+
     function cargarImagenSello(src: string): Promise<HTMLImageElement | null> {
         return new Promise((resolve) => {
             const cached = cacheImagenesSellos.get(src);
@@ -480,17 +548,9 @@ import Footer from '../components/Footer.astro';
 
         const partes = limpio.split(/\s+/);
 
-        if (partes.length === 1) {
-            return { nombre: partes[0], apellidos: '—' };
-        }
-
-        if (partes.length === 2) {
-            return { nombre: partes[0], apellidos: partes[1] };
-        }
-
-        if (partes.length === 3) {
-            return { nombre: partes[0], apellidos: partes.slice(1).join(' ') };
-        }
+        if (partes.length === 1) return { nombre: partes[0], apellidos: '—' };
+        if (partes.length === 2) return { nombre: partes[0], apellidos: partes[1] };
+        if (partes.length === 3) return { nombre: partes[0], apellidos: partes.slice(1).join(' ') };
 
         return {
             nombre: partes.slice(0, 2).join(' '),
@@ -877,6 +937,7 @@ import Footer from '../components/Footer.astro';
     // --- Manejo de foto: drag & drop + selección dentro del campo ---
     function limpiarFotoSeleccionada() {
         fotoImg = null;
+        archivoFotoSeleccionado = null;
         if (inputFoto) inputFoto.value = '';
         if (dropZoneThumb) dropZoneThumb.src = '';
         if (dropZoneFileName) dropZoneFileName.textContent = '';
@@ -885,12 +946,21 @@ import Footer from '../components/Footer.astro';
         renderBook();
     }
 
-    function procesarArchivoFoto(file: File | undefined) {
+    async function procesarArchivoFoto(file: File | undefined) {
         if (!HABILITAR_FOTO_USUARIO) return;
         if (!file || !file.type.startsWith('image/')) {
             limpiarFotoSeleccionada();
             return;
         }
+
+        const archivoComprimido = await comprimirImagenEnCliente(file, {
+            maxAncho: 900,
+            maxAlto: 900,
+            calidad: 0.78,
+            formato: 'image/jpeg',
+        });
+
+        archivoFotoSeleccionado = archivoComprimido;
 
         const reader = new FileReader();
         reader.onload = (ev) => {
@@ -900,14 +970,17 @@ import Footer from '../components/Footer.astro';
             img.onload = () => {
                 fotoImg = img;
                 if (dropZoneThumb) dropZoneThumb.src = url;
-                if (dropZoneFileName) dropZoneFileName.textContent = file.name;
+                if (dropZoneFileName) {
+                    const kb = Math.max(1, Math.round(archivoComprimido.size / 1024));
+                    dropZoneFileName.textContent = `${archivoComprimido.name} (${kb} KB)`;
+                }
                 if (dropZoneEmpty) dropZoneEmpty.hidden = true;
                 if (dropZonePreview) dropZonePreview.hidden = false;
                 renderBook();
             };
             img.src = url;
         };
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(archivoComprimido);
     }
 
     dropZoneFoto?.addEventListener('click', () => {
@@ -959,15 +1032,62 @@ import Footer from '../components/Footer.astro';
         e.stopPropagation();
         dropZoneFoto.classList.remove('is-dragover');
         const file = e.dataTransfer?.files?.[0];
-        procesarArchivoFoto(file);
+        void procesarArchivoFoto(file);
     });
 
     inputFoto?.addEventListener('change', () => {
         const file = inputFoto.files?.[0];
-        procesarArchivoFoto(file);
+        void procesarArchivoFoto(file);
     });
 
-    // --- Sesión anónima y detección de pasaporte previo ---
+    async function subirFotoAStorage(identificador: string): Promise<string | null> {
+        if (!HABILITAR_FOTO_USUARIO || !fotoImg) return null;
+
+        if (archivoFotoSeleccionado) {
+            const archivoFinal = await comprimirImagenEnCliente(archivoFotoSeleccionado, {
+                maxAncho: 900,
+                maxAlto: 900,
+                calidad: 0.78,
+                formato: 'image/jpeg',
+            });
+
+            const ext = archivoFinal.name.split('.').pop()?.toLowerCase() || 'jpg';
+            const rutaArchivo = `${identificador.toLowerCase()}-${Date.now()}.${ext}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from(BUCKET_FOTOS_PASAPORTE)
+                .upload(rutaArchivo, archivoFinal, {
+                    contentType: archivoFinal.type,
+                    cacheControl: '3600',
+                    upsert: true,
+                });
+
+            if (uploadError) {
+                throw new Error(`Error subiendo imagen a Storage (${BUCKET_FOTOS_PASAPORTE}): ${uploadError.message}`);
+            }
+
+            const { data: pubData } = supabase.storage
+                .from(BUCKET_FOTOS_PASAPORTE)
+                .getPublicUrl(rutaArchivo);
+
+            if (pubData?.publicUrl) {
+                return pubData.publicUrl;
+            }
+        }
+
+        // Respaldo DataURL compacto si no hubo File original
+        const tempCanvas = document.createElement('canvas');
+        const maxSide = 480;
+        const natW = fotoImg.naturalWidth || 300;
+        const natH = fotoImg.naturalHeight || 300;
+        const ratio = Math.min(1, maxSide / Math.max(natW, natH));
+        tempCanvas.width = Math.max(1, Math.round(natW * ratio));
+        tempCanvas.height = Math.max(1, Math.round(natH * ratio));
+        const tCtx = tempCanvas.getContext('2d');
+        tCtx?.drawImage(fotoImg, 0, 0, tempCanvas.width, tempCanvas.height);
+        return tempCanvas.toDataURL('image/jpeg', 0.82);
+    }
+
     async function asegurarSesionAnonima(): Promise<string | null> {
         const { data: sessionData } = await supabase.auth.getSession();
         if (sessionData.session?.user?.id) {
@@ -1035,17 +1155,24 @@ import Footer from '../components/Footer.astro';
         if (feedback) feedback.hidden = true;
 
         try {
-            await suscribirNewsletterSiProcede(email);
-
+            // 1. Asegurar sesión anónima para cumplir RLS
             if (!sesionAnonimaId) {
                 sesionAnonimaId = await asegurarSesionAnonima();
             }
 
+            // 2. Registrar en newsletter_suscriptores si la casilla está marcada
+            await suscribirNewsletterSiProcede(email);
+
+            // 3. Subir la foto primero para tener la URL lista
+            const fotoUrlSubida = await subirFotoAStorage(sesionAnonimaId || 'viajero');
+
+            // 4. Emitir pasaporte en la Edge Function (enviando también foto_url)
             const { data, error } = await supabase.functions.invoke('emitir-pasaporte', {
                 body: {
                     nombre,
                     email,
                     auth_user_id: sesionAnonimaId,
+                    foto_url: fotoUrlSubida,
                 },
             });
 
@@ -1057,27 +1184,49 @@ import Footer from '../components/Footer.astro';
                 throw new Error('La función no devolvió un número de pasaporte.');
             }
 
-            numeroPasaporte = data.numero_pasaporte;
+            numeroPasaporte = data.numero_pasaporte.trim().toUpperCase();
             if (Array.isArray(data?.pasaporte?.sellos)) {
                 sellosDelPasaporte = data.pasaporte.sellos;
                 sellosDelPasaporte.forEach((s) => cargarImagenSello(s.src));
             }
 
-            if (existingBanner && existingText) {
-                existingText.textContent = `Ya tienes un pasaporte vinculado a esta sesión: ${numeroPasaporte}.`;
-                existingBanner.hidden = false;
+            // 5. Asegurar persistencia de foto_url en pasaportes_aldaneros y verificar que se guardó
+            if (fotoUrlSubida && !data?.pasaporte?.foto_url) {
+                const { data: updatedRows, error: updateError } = await supabase
+                    .from('pasaportes_aldaneros')
+                    .update({ foto_url: fotoUrlSubida })
+                    .eq('numero_pasaporte', numeroPasaporte)
+                    .select('numero_pasaporte, foto_url');
+
+                if (updateError) {
+                    throw new Error(`No se pudo guardar la foto en la tabla: ${updateError.message}`);
+                }
+
+                if (!updatedRows || updatedRows.length === 0) {
+                    throw new Error(
+                        'La foto se subió a Storage, pero las políticas RLS impidieron actualizar foto_url en pasaportes_aldaneros.'
+                    );
+                }
             }
 
-            currentStep = INDICE_PAGINA_USUARIO;
-            renderBook();
-            triggerEaseTransition();
+            try {
+                localStorage.setItem(
+                    STORAGE_KEY_PASAPORTE,
+                    JSON.stringify({
+                        numero_pasaporte: numeroPasaporte,
+                        nombre,
+                        email,
+                        fecha: fechaEmision,
+                        foto_url: fotoUrlSubida,
+                        sellos: sellosDelPasaporte,
+                    })
+                );
+            } catch {
+                // Ignorar si localStorage no está disponible
+            }
 
-            mostrarFeedback(
-                'success',
-                data?.ya_existia
-                    ? `Recuperamos tu pasaporte ${numeroPasaporte} vinculado a ${email}. Ya puedes descargar tu PNG.`
-                    : `¡Pasaporte ${numeroPasaporte} emitido correctamente! Ya puedes descargar tu PNG.`
-            );
+            window.location.href = `/perfil?pasaporte=${encodeURIComponent(numeroPasaporte)}`;
+            return;
         } catch (err: any) {
             console.error('Error emitiendo pasaporte:', err);
             currentStep = INDICE_PAGINA_USUARIO;
@@ -1085,7 +1234,7 @@ import Footer from '../components/Footer.astro';
             triggerEaseTransition();
             mostrarFeedback(
                 'error',
-                `No se pudo completar el registro en servidor (${err?.message || 'revisa Edge Function emitir-pasaporte y secrets en Supabase'}). Aun así puedes descargar tu Página 4 en PNG.`
+                `Error al emitir pasaporte: ${err?.message || 'revisa la configuración en Supabase'}`
             );
         } finally {
             submitBtn.disabled = false;
@@ -1098,6 +1247,7 @@ import Footer from '../components/Footer.astro';
 </script>
 
 <style>
+    /* Mantén exactamente el mismo bloque <style> que ya tenías en pasaporte.astro */
     .passport-page {
         min-height: 85dvh;
         background-color: hsl(0, 0%, 100%);
@@ -1118,7 +1268,7 @@ import Footer from '../components/Footer.astro';
 
     .kicker {
         display: inline-block;
-        color: #29b7ef; ;
+        color: #29b7ef;
         padding: 0.25rem 0.9rem;
         border-radius: 999px;
         font-size: 0.78rem;
@@ -1336,11 +1486,6 @@ import Footer from '../components/Footer.astro';
         color: #ffffff;
     }
 
-    .field-group small {
-        color: #8c8c9a;
-        font-size: 0.8rem;
-    }
-
     .emit-btn {
         background: #eb7443;
         color: #ffffff;
@@ -1404,7 +1549,6 @@ import Footer from '../components/Footer.astro';
         display: none !important;
     }
 
-    /* Escenario de la libreta */
     .book-stage-wrapper {
         display: flex;
         flex-direction: column;
@@ -1430,12 +1574,8 @@ import Footer from '../components/Footer.astro';
     }
 
     @keyframes easeInPage {
-        0% {
-            opacity: 0.25;
-        }
-        100% {
-            opacity: 1;
-        }
+        0% { opacity: 0.25; }
+        100% { opacity: 1; }
     }
 
     .spine-view {
@@ -1528,13 +1668,8 @@ import Footer from '../components/Footer.astro';
         color: #ffffff;
     }
 
-    .edge-left {
-        left: 0;
-    }
-
-    .edge-right {
-        right: 0;
-    }
+    .edge-left { left: 0; }
+    .edge-right { right: 0; }
 
     .backcover-view {
         position: relative;
@@ -1579,20 +1714,12 @@ import Footer from '../components/Footer.astro';
     }
 
     @media (prefers-reduced-motion: reduce) {
-        .book-stage.is-fading {
-            animation: none;
-        }
+        .book-stage.is-fading { animation: none; }
     }
 
     @media (max-width: 768px) {
-        .passport-workspace {
-            grid-template-columns: 1fr;
-        }
-
-        .spread-desktop {
-            display: none;
-        }
-
+        .passport-workspace { grid-template-columns: 1fr; }
+        .spread-desktop { display: none; }
         .single-mobile {
             display: block;
             max-width: 360px;

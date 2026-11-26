@@ -1,0 +1,781 @@
+---
+// src/pages/usuario.astro
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout title="Usuario | Pasaporte Aldaneano - Acaneo Collective">
+    <Header />
+    <main class="user-page">
+        <div class="user-container">
+            <!-- Vista inicial: Login por número de pasaporte -->
+            <section id="loginView" class="login-card" aria-labelledby="loginHeading">
+                <span class="user-kicker">PASAPORTE ALDANEANO</span>
+                <h1 id="loginHeading" class="login-title">
+                    Bienvenido a Aldán! Introduce el numero de tu pasaporte aldaneano para iniciar sesión.
+                </h1>
+
+                <form id="passportLoginForm" class="login-form">
+                    <label for="passportNumberInput" class="sr-only">
+                        Número de pasaporte aldaneano
+                    </label>
+                    <input
+                        type="text"
+                        id="passportNumberInput"
+                        name="numero_pasaporte"
+                        placeholder="Ej. ALD-1234"
+                        autocomplete="off"
+                        required
+                    />
+                    <button type="submit" id="loginBtn" class="login-btn">
+                        Iniciar sesión
+                    </button>
+                    <p id="loginFeedback" class="login-feedback" hidden></p>
+                </form>
+
+                <p class="create-link-wrap">
+                    <a href="/pasaporte">
+                        Aún no tienes pasaporte? Creátelo rapidamente aqui.
+                    </a>
+                </p>
+            </section>
+
+            <!-- Vista de perfil: Pasaporte centrado en pantalla -->
+            <section id="profileView" class="profile-view" aria-live="polite" hidden>
+                <div class="profile-header-bar">
+                    <div class="profile-info">
+                        <span class="profile-pill">SESIÓN ACTIVA</span>
+                        <strong id="profileCode">ALD-XXXX</strong>
+                        <span id="profileName"></span>
+                    </div>
+                    <div class="profile-controls">
+                        <button type="button" id="downloadUserPassportBtn" class="profile-btn">
+                            Descargar Página 4 (PNG)
+                        </button>
+                        <button type="button" id="signOutPassportBtn" class="profile-btn outline">
+                            Cerrar sesión
+                        </button>
+                    </div>
+                </div>
+
+                <div class="centered-passport-stage">
+                    <canvas id="userPassportCanvas" width="667" height="1050"></canvas>
+                </div>
+
+                <div id="stampsGallery" class="stamps-section" hidden>
+                    <h2>Sellos estampados en tu pasaporte</h2>
+                    <div id="stampsList" class="stamps-grid"></div>
+                </div>
+            </section>
+        </div>
+    </main>
+    <Footer />
+</Layout>
+
+<script>
+    import { supabase } from '../lib/supabase';
+
+    const STORAGE_KEY_PASAPORTE = 'aldan_pasaporte_activo';
+
+    const COORDENADAS_PAG4 = {
+        foto: {
+            xRatio: 0.46,
+            yRatio: 0.140,
+            wRatio: 0.38,
+            hRatio: 0.34,
+            radio: 12,
+        },
+        apellidos:    { xRatio: 0.640, yRatio: 0.320, maxWidthRatio: 0.50 },
+        nombre:       { xRatio: 0.490, yRatio: 0.320, maxWidthRatio: 0.50 },
+        nacionalidad: { xRatio: 0.320, yRatio: 0.320, maxWidthRatio: 0.50 },
+        fecha:        { xRatio: 0.150, yRatio: 0.320, maxWidthRatio: 0.50 },
+        numero:       { xRatio: 0.340, yRatio: 0.715, maxWidthRatio: 0.50 },
+    };
+
+    interface SelloRegistrado {
+        id: string;
+        src: string;
+        pagina: number;
+        otorgadoEn?: string;
+    }
+
+    interface PasaporteRecord {
+        numero_pasaporte: string;
+        nombre?: string | null;
+        email?: string | null;
+        foto_url?: string | null;
+        sellos?: SelloRegistrado[] | null;
+        fecha?: string | null;
+        created_at?: string | null;
+    }
+
+    const loginView = document.getElementById('loginView');
+    const loginForm = document.getElementById('passportLoginForm') as HTMLFormElement | null;
+    const passportNumberInput = document.getElementById('passportNumberInput') as HTMLInputElement | null;
+    const loginBtn = document.getElementById('loginBtn') as HTMLButtonElement | null;
+    const loginFeedback = document.getElementById('loginFeedback');
+
+    const profileView = document.getElementById('profileView');
+    const profileCode = document.getElementById('profileCode');
+    const profileName = document.getElementById('profileName');
+    const downloadBtn = document.getElementById('downloadUserPassportBtn');
+    const signOutBtn = document.getElementById('signOutPassportBtn');
+
+    const stampsGallery = document.getElementById('stampsGallery');
+    const stampsList = document.getElementById('stampsList');
+
+    const canvas = document.getElementById('userPassportCanvas') as HTMLCanvasElement | null;
+    const ctx = canvas?.getContext('2d');
+
+    const pag4Img = new Image();
+    pag4Img.crossOrigin = 'anonymous';
+    pag4Img.src = '/pasaporte/pagina-4.jpg';
+
+    let pasaporteActivo: PasaporteRecord | null = null;
+
+    function mostrarErrorLogin(mensaje: string) {
+        if (!loginFeedback) return;
+        loginFeedback.textContent = mensaje;
+        loginFeedback.hidden = false;
+    }
+
+    function limpiarErrorLogin() {
+        if (!loginFeedback) return;
+        loginFeedback.textContent = '';
+        loginFeedback.hidden = true;
+    }
+
+    function guardarSesionLocal(data: PasaporteRecord) {
+        try {
+            localStorage.setItem(STORAGE_KEY_PASAPORTE, JSON.stringify(data));
+        } catch {
+            // Ignorar si localStorage no está disponible
+        }
+    }
+
+    function leerSesionLocal(): PasaporteRecord | null {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY_PASAPORTE);
+            return raw ? (JSON.parse(raw) as PasaporteRecord) : null;
+        } catch {
+            return null;
+        }
+    }
+
+    function borrarSesionLocal() {
+        try {
+            localStorage.removeItem(STORAGE_KEY_PASAPORTE);
+        } catch {
+            // Ignorar
+        }
+    }
+
+    function separarNombreYApellidos(textoCompleto: string): { nombre: string; apellidos: string } {
+        const limpio = (textoCompleto || '').trim().toUpperCase();
+        if (!limpio) return { nombre: 'VIAJERO', apellidos: 'ALDANERO' };
+
+        const partes = limpio.split(/\s+/);
+        if (partes.length === 1) return { nombre: partes[0], apellidos: '—' };
+        if (partes.length === 2) return { nombre: partes[0], apellidos: partes[1] };
+        if (partes.length === 3) return { nombre: partes[0], apellidos: partes.slice(1).join(' ') };
+
+        return {
+            nombre: partes.slice(0, 2).join(' '),
+            apellidos: partes.slice(2).join(' '),
+        };
+    }
+
+    function dibujarTextoRotado(
+        context: CanvasRenderingContext2D,
+        texto: string,
+        x: number,
+        y: number,
+        maxWidth: number,
+        font: string,
+        color: string
+    ) {
+        context.save();
+        context.translate(x, y);
+        context.rotate(Math.PI / 2);
+        context.font = font;
+        context.fillStyle = color;
+        context.textAlign = 'left';
+        context.textBaseline = 'top';
+        context.fillText(texto, 0, 0, maxWidth);
+        context.restore();
+    }
+
+    function dibujarFotoRotada(
+        context: CanvasRenderingContext2D,
+        img: HTMLImageElement,
+        centerX: number,
+        centerY: number,
+        w: number,
+        h: number,
+        radio: number
+    ) {
+        context.save();
+        context.translate(centerX, centerY);
+        context.rotate(Math.PI / 2);
+
+        const x = -w / 2;
+        const y = -h / 2;
+
+        context.beginPath();
+        context.roundRect(x, y, w, h, radio);
+        context.clip();
+
+        const imgRatio = img.width / img.height;
+        const boxRatio = w / h;
+        let drawW = w;
+        let drawH = h;
+        let offsetX = x;
+        let offsetY = y;
+
+        if (imgRatio > boxRatio) {
+            drawW = h * imgRatio;
+            offsetX = x - (drawW - w) / 2;
+        } else {
+            drawH = w / imgRatio;
+            offsetY = y - (drawH - h) / 2;
+        }
+
+        context.drawImage(img, offsetX, offsetY, drawW, drawH);
+        context.restore();
+    }
+
+    function cargarImagenAsync(src: string): Promise<HTMLImageElement | null> {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => resolve(img);
+            img.onerror = () => {
+                // Reintento sin crossOrigin para data URLs o imágenes locales
+                const fallback = new Image();
+                fallback.onload = () => resolve(fallback);
+                fallback.onerror = () => resolve(null);
+                fallback.src = src;
+            };
+            img.src = src;
+        });
+    }
+
+    async function renderizarPasaporteEnCanvas(record: PasaporteRecord) {
+        if (!canvas || !ctx) return;
+
+        if (!pag4Img.complete || pag4Img.naturalWidth === 0) {
+            await new Promise<void>((resolve) => {
+                pag4Img.onload = () => resolve();
+                pag4Img.onerror = () => resolve();
+            });
+        }
+
+        const W = pag4Img.naturalWidth > 0 ? pag4Img.naturalWidth : 667;
+        const H = pag4Img.naturalHeight > 0 ? pag4Img.naturalHeight : 1050;
+        canvas.width = W;
+        canvas.height = H;
+        const escala = W / 667;
+
+        ctx.clearRect(0, 0, W, H);
+        if (pag4Img.complete && pag4Img.naturalWidth > 0) {
+            ctx.drawImage(pag4Img, 0, 0, W, H);
+        } else {
+            ctx.fillStyle = '#d8dfd9';
+            ctx.fillRect(0, 0, W, H);
+        }
+
+        if (record.foto_url) {
+            const foto = await cargarImagenAsync(record.foto_url);
+            if (foto && foto.naturalWidth > 0 && foto.naturalHeight > 0) {
+                dibujarFotoRotada(
+                    ctx,
+                    foto,
+                    W * COORDENADAS_PAG4.foto.xRatio,
+                    H * COORDENADAS_PAG4.foto.yRatio,
+                    W * COORDENADAS_PAG4.foto.wRatio,
+                    H * COORDENADAS_PAG4.foto.hRatio,
+                    COORDENADAS_PAG4.foto.radio * escala
+                );
+            }
+        }
+
+        const { nombre, apellidos } = separarNombreYApellidos(record.nombre || '');
+        const fecha =
+            record.fecha ||
+            (record.created_at
+                ? new Date(record.created_at).toLocaleDateString('es-ES', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                  })
+                : new Date().toLocaleDateString('es-ES', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                  }));
+
+        const fuenteDato = `bold ${Math.round(19 * escala)}px "Fjalla One", sans-serif`;
+        const fuenteCodigo = `bold ${Math.round(20 * escala)}px monospace`;
+        const colorTexto = '#1d2522';
+
+        dibujarTextoRotado(
+            ctx,
+            apellidos,
+            W * COORDENADAS_PAG4.apellidos.xRatio,
+            H * COORDENADAS_PAG4.apellidos.yRatio,
+            H * COORDENADAS_PAG4.apellidos.maxWidthRatio,
+            fuenteDato,
+            colorTexto
+        );
+
+        dibujarTextoRotado(
+            ctx,
+            nombre,
+            W * COORDENADAS_PAG4.nombre.xRatio,
+            H * COORDENADAS_PAG4.nombre.yRatio,
+            H * COORDENADAS_PAG4.nombre.maxWidthRatio,
+            fuenteDato,
+            colorTexto
+        );
+
+        dibujarTextoRotado(
+            ctx,
+            'ALDANERO / ALDAN',
+            W * COORDENADAS_PAG4.nacionalidad.xRatio,
+            H * COORDENADAS_PAG4.nacionalidad.yRatio,
+            H * COORDENADAS_PAG4.nacionalidad.maxWidthRatio,
+            fuenteDato,
+            colorTexto
+        );
+
+        dibujarTextoRotado(
+            ctx,
+            fecha,
+            W * COORDENADAS_PAG4.fecha.xRatio,
+            H * COORDENADAS_PAG4.fecha.yRatio,
+            H * COORDENADAS_PAG4.fecha.maxWidthRatio,
+            fuenteDato,
+            colorTexto
+        );
+
+        dibujarTextoRotado(
+            ctx,
+            record.numero_pasaporte.toUpperCase(),
+            W * COORDENADAS_PAG4.numero.xRatio,
+            H * COORDENADAS_PAG4.numero.yRatio,
+            H * COORDENADAS_PAG4.numero.maxWidthRatio,
+            fuenteCodigo,
+            '#1b4f3e'
+        );
+    }
+
+    function renderizarSellos(sellos: SelloRegistrado[] | null | undefined) {
+        if (!stampsGallery || !stampsList) return;
+        const lista = Array.isArray(sellos) ? sellos : [];
+
+        if (lista.length === 0) {
+            stampsGallery.hidden = true;
+            stampsList.innerHTML = '';
+            return;
+        }
+
+        stampsList.innerHTML = lista
+            .map(
+                (s) => `
+                <article class="stamp-item">
+                    <img src="${s.src}" alt="Sello ${s.id}" loading="lazy" />
+                    <span class="stamp-meta">Pág. ${s.pagina} · ${s.id}</span>
+                </article>
+            `
+            )
+            .join('');
+        stampsGallery.hidden = false;
+    }
+
+    async function abrirPerfilConPasaporte(record: PasaporteRecord) {
+        pasaporteActivo = record;
+        guardarSesionLocal(record);
+
+        if (loginView) loginView.hidden = true;
+        if (profileView) profileView.hidden = false;
+
+        if (profileCode) profileCode.textContent = record.numero_pasaporte.toUpperCase();
+        if (profileName) profileName.textContent = record.nombre ? `— ${record.nombre}` : '';
+
+        await renderizarPasaporteEnCanvas(record);
+        renderizarSellos(record.sellos);
+    }
+
+    function mostrarVistaLogin() {
+        pasaporteActivo = null;
+        borrarSesionLocal();
+        if (profileView) profileView.hidden = true;
+        if (loginView) loginView.hidden = false;
+        passportNumberInput?.focus();
+    }
+
+    async function consultarPasaporteEnSupabase(codigo: string): Promise<PasaporteRecord | null> {
+        const normalizado = codigo.trim().toUpperCase();
+        if (!normalizado) return null;
+
+        const { data, error } = await supabase
+            .from('pasaportes_aldaneros')
+            .select('numero_pasaporte, nombre, email, foto_url, sellos, created_at')
+            .ilike('numero_pasaporte', normalizado)
+            .maybeSingle();
+
+        if (error) {
+            console.warn('Error consultando pasaportes_aldaneros:', error.message);
+            return null;
+        }
+
+        if (!data?.numero_pasaporte) return null;
+
+        const local = leerSesionLocal();
+        return {
+            numero_pasaporte: data.numero_pasaporte,
+            nombre: data.nombre,
+            email: data.email,
+            foto_url:
+                data.foto_url ||
+                (local?.numero_pasaporte?.toUpperCase() === normalizado ? local.foto_url : null),
+            sellos: Array.isArray(data.sellos)
+                ? data.sellos
+                : local?.numero_pasaporte?.toUpperCase() === normalizado
+                  ? local.sellos
+                  : [],
+            created_at: data.created_at,
+        };
+    }
+    
+        const passportLoginForm = document.getElementById('passportLoginForm') as HTMLFormElement | null;
+
+        passportLoginForm?.addEventListener('submit', async (e: SubmitEvent) => {
+            e.preventDefault();
+            // ...
+        });
+    passportLoginForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!passportNumberInput || !loginBtn) return;
+
+        limpiarErrorLogin();
+        const codigo = passportNumberInput.value.trim().toUpperCase();
+        if (!codigo) return;
+
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'Verificando...';
+
+        try {
+            const encontrado = await consultarPasaporteEnSupabase(codigo);
+            if (!encontrado) {
+                mostrarErrorLogin(
+                    'No se encontró un pasaporte con ese número. Verifica el código o créate uno nuevo.'
+                );
+                return;
+            }
+            await abrirPerfilConPasaporte(encontrado);
+        } catch {
+            mostrarErrorLogin('Ocurrió un error al consultar tu pasaporte. Inténtalo de nuevo.');
+        } finally {
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Iniciar sesión';
+        }
+    });
+
+    signOutBtn?.addEventListener('click', () => {
+        if (window.history.replaceState) {
+            const urlSinQuery = `${window.location.pathname}`;
+            window.history.replaceState({}, '', urlSinQuery);
+        }
+        mostrarVistaLogin();
+    });
+
+    downloadBtn?.addEventListener('click', () => {
+        if (!canvas || !pasaporteActivo) return;
+        try {
+            const url = canvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `pasaporte-${pasaporteActivo.numero_pasaporte.toLowerCase()}.png`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        } catch {
+            mostrarErrorLogin('No se pudo exportar el PNG en este navegador.');
+        }
+    });
+
+    async function inicializar() {
+        const params = new URLSearchParams(window.location.search);
+        const pasaporteUrl = params.get('pasaporte')?.trim().toUpperCase();
+        const sesionLocal = leerSesionLocal();
+
+        if (pasaporteUrl) {
+            const desdeDb = await consultarPasaporteEnSupabase(pasaporteUrl);
+            if (desdeDb) {
+                await abrirPerfilConPasaporte(desdeDb);
+                return;
+            }
+            if (sesionLocal && sesionLocal.numero_pasaporte.toUpperCase() === pasaporteUrl) {
+                await abrirPerfilConPasaporte(sesionLocal);
+                return;
+            }
+            await abrirPerfilConPasaporte({
+                numero_pasaporte: pasaporteUrl,
+                nombre: sesionLocal?.nombre || '',
+                email: sesionLocal?.email || '',
+                foto_url: sesionLocal?.foto_url || null,
+                sellos: sesionLocal?.sellos || [],
+                fecha: sesionLocal?.fecha || null,
+            });
+            return;
+        }
+
+        if (sesionLocal?.numero_pasaporte) {
+            const refrescado = await consultarPasaporteEnSupabase(sesionLocal.numero_pasaporte);
+            await abrirPerfilConPasaporte(refrescado || sesionLocal);
+            return;
+        }
+
+        mostrarVistaLogin();
+    }
+
+    inicializar();
+</script>
+
+<style>
+    .user-page {
+        min-height: 82dvh;
+        background-color: #ffffff;
+        color: #141418;
+        padding: 3.5rem 1.5rem 5rem 1.5rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .user-container {
+        width: 100%;
+        max-width: 1120px;
+        margin: 0 auto;
+    }
+
+    .login-card {
+        max-width: 540px;
+        margin: 0 auto;
+        background: #141418;
+        color: #ffffff;
+        border-radius: 22px;
+        padding: 2.5rem 2rem;
+        text-align: center;
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.14);
+    }
+
+    .user-kicker {
+        display: inline-block;
+        color: #29b7ef;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        margin-bottom: 0.7rem;
+    }
+
+    .login-title {
+        font-family: var(--font-title, 'Fjalla One', sans-serif);
+        font-size: clamp(1.4rem, 2.8vw, 1.95rem);
+        line-height: 1.25;
+        font-weight: 400;
+        margin: 0 0 1.6rem 0;
+    }
+
+    .login-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+    }
+
+    .login-form input {
+        background: #0b0b0e;
+        border: 1px solid #32323e;
+        border-radius: 12px;
+        padding: 0.85rem 1rem;
+        color: #ffffff;
+        font-size: 1rem;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .login-form input:focus {
+        outline: none;
+        border-color: #29b7ef;
+    }
+
+    .login-btn {
+        background: #eb7443;
+        color: #ffffff;
+        border: none;
+        border-radius: 12px;
+        padding: 0.9rem 1.2rem;
+        font-family: var(--font-title, 'Fjalla One', sans-serif);
+        font-size: 1.2rem;
+        cursor: pointer;
+    }
+
+    .login-btn:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+    }
+
+    .login-feedback {
+        margin: 0.25rem 0 0 0;
+        font-size: 0.88rem;
+        color: #ffd0be;
+    }
+
+    .create-link-wrap {
+        margin: 1.5rem 0 0 0;
+        font-size: 0.95rem;
+    }
+
+    .create-link-wrap a {
+        color: #29b7ef;
+        font-weight: 600;
+        text-decoration: underline;
+    }
+
+    .create-link-wrap a:hover {
+        color: #77d4fa;
+    }
+
+    .profile-view {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.75rem;
+    }
+
+    .profile-header-bar {
+        width: 100%;
+        max-width: 720px;
+        background: #141418;
+        color: #ffffff;
+        border-radius: 16px;
+        padding: 1rem 1.3rem;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.85rem;
+    }
+
+    .profile-info {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        flex-wrap: wrap;
+    }
+
+    .profile-pill {
+        background: rgba(41, 183, 239, 0.16);
+        color: #29b7ef;
+        border: 1px solid rgba(41, 183, 239, 0.45);
+        border-radius: 999px;
+        padding: 0.2rem 0.65rem;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.8px;
+    }
+
+    .profile-controls {
+        display: flex;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+    }
+
+    .profile-btn {
+        background: #29b7ef;
+        color: #ffffff;
+        border: none;
+        border-radius: 10px;
+        padding: 0.55rem 0.9rem;
+        font-size: 0.85rem;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .profile-btn.outline {
+        background: transparent;
+        color: #d7d7e0;
+        border: 1px solid #3c3c4a;
+    }
+
+    .centered-passport-stage {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #userPassportCanvas {
+        display: block;
+        max-width: min(92vw, 430px);
+        max-height: 74dvh;
+        width: auto;
+        height: auto;
+        border-radius: 12px;
+        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
+    }
+
+    .stamps-section {
+        width: 100%;
+        max-width: 720px;
+        text-align: center;
+    }
+
+    .stamps-section h2 {
+        font-family: var(--font-title, 'Fjalla One', sans-serif);
+        font-size: 1.35rem;
+        margin: 0 0 1rem 0;
+    }
+
+    .stamps-grid {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem;
+    }
+
+    :global(.stamp-item) {
+        background: #f6f7f9;
+        border: 1px solid #e2e5ec;
+        border-radius: 12px;
+        padding: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.45rem;
+        width: 130px;
+    }
+
+    :global(.stamp-item img) {
+        width: 76px;
+        height: 76px;
+        object-fit: contain;
+    }
+
+    :global(.stamp-meta) {
+        font-size: 0.75rem;
+        color: #4a4d57;
+        font-weight: 600;
+    }
+
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+</style>
