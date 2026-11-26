@@ -119,6 +119,7 @@
 		position: relative;
 		z-index: 3;
 		padding: 4rem;
+		overflow:visible;
 		max-width: 650px;
 		color: #ffffff;
 	}
@@ -171,8 +172,55 @@
 	}
 
 	@media(max-width: 768px) {
-		.modal-body { padding: 2.5rem 1.8rem; }
-		.close-btn-box { top: 1.2rem; right: 1.2rem; width: 38px; height: 38px; }
+		.modal-body { padding: 2.5rem 1.8rem; overflow:visible;}
 		.modal-overlay { background: rgba(11, 11, 14, 0.88); }
+		.modal-title {
+			font-family: var(--font-title);
+			font-size: 2rem;
+			letter-spacing: 1.5px;
+			margin-bottom: 1rem;
+			color: #ffffff;
+			line-height: 1.1;
+		}
+		.modal-subtitle {
+			font-size: 1.0rem;
+			font-weight: 500;
+			margin-bottom: 1.5rem;
+			color: #ffffff;
+		}
+		.modal-list {
+			list-style: none;
+			margin-bottom: 2.5rem;
+		}
+		.modal-list li {
+			position: relative;
+			padding-left: 1.5rem;
+			margin-bottom: 0.8rem;
+			font-size: 1.0rem;
+			color: #e0e0e0;
+			line-height: 1.5;
+		}
+		.modal-list li::before {
+			content: "•";
+			position: absolute;
+			left: 0;
+			color: #ffffff;
+			font-size: 1.2rem;
+		}
+		.modal-contact-text {
+			font-size: 1.05rem;
+			font-weight: 600;
+			color: #ffffff;
+		}
+		.modal-contact-text a {
+			color: #ffffff;
+			text-decoration: underline;
+			font-weight: 800;
+			transition: color 0.2s ease;
+		}
+		.modal-contact-text a:hover {
+			color: #29b7ef;
+		}
+		.close-btn-box { top: 1.2rem; right: 1rem; width: 20px; height:20px; }
 	}
 </style>

@@ -25,7 +25,7 @@ export const REGIONES_ALDAN: RegionMapa[] = [
     {
         id: 'calcinia',
         nombre: 'Calcinia',
-        descripcion: 'Región donde la tierra es oscura y escombrosa, cubierta de cenizas del recuerdo de lo que hubo. Después de la explosión solo hay piedra, volcanes, y grandes nada\n\n*~<No sé si me dé tiempo a terminar esta carta, mi preciado amigo. Te escribo con temor a que pase lo peor. Se habla de una estrella lejana que arrasará la tierra tal como la conocemos. Ya todo está comenzando a cambiar, el cielo está rojo y...>~*\n\n*Fragmento de una carta encontrada por exploradores*',
+        descripcion: 'Región donde la tierra es oscura y escombrosa, cubierta de cenizas del recuerdo de lo que hubo. Después de la explosión solo hay piedra, volcanes, y grandes nada\n\n*~No sé si me dé tiempo a terminar esta carta, mi preciado amigo. Te escribo con temor a que pase lo peor. Se habla de una estrella lejana que arrasará la tierra tal como la conocemos. Ya todo está comenzando a cambiar, el cielo está rojo y...~*\n\n*Fragmento de una carta encontrada por exploradores*',
         pngSrc: '/mapa/pin-calcinia.png',
         top: '10%',
         left: '11%',
