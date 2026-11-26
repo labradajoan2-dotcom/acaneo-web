@@ -35,7 +35,7 @@ export const REGIONES_ALDAN: RegionMapa[] = [
     {
         id: 'desierto-rojo',
         nombre: 'Desierto Rojo',
-        descripcion: 'Páramo vacío y rojizo, con escombros y torres gigantescas. \n\nFueron encontrados diarios de investigación de una antigua empresa tecnológica cerca de los restos de dos antiguas torres que parecen haber estado conectadas entre si. Los textos encontrados hablaban por primera vez del espacio y de fenómenos que ocurren en él. Los investigadores de Aldan no han sido capaces de descifrarlos.',
+        descripcion: 'Páramo vacío y rojizo, con escombros y torres gigantescas. \n\nFueron encontrados diarios de investigación de una antigua empresa tecnológica cerca de los restos de dos antiguas torres que parecen haber estado conectadas entre sí. Los textos encontrados hablaban por primera vez del espacio y de fenómenos que ocurren en él. Los investigadores de Aldán no han sido capaces de descifrarlos.',
         pngSrc: '/mapa/pin-desierto.png',
         top: '30%',
         left: '21%',
