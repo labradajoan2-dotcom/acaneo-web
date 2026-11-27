@@ -11,6 +11,7 @@ import Footer from '../components/Footer.astro';
         <header class="profile-header">
                 <span class="kicker">DOCUMENTO OFICIAL DE TRÁNSITO</span>
                 <h1>PASAPORTE ALDANEANO</h1>
+                <p>Este documento es personal e intransferible. Asegúrese de ocultar su NO. de pasaporte para evitar suplantación de identidad.</p>
             </header>
         <div class="profile-container">
             <section id="profileSection" class="profile-view" aria-live="polite" hidden>
@@ -152,7 +153,7 @@ import Footer from '../components/Footer.astro';
     const PAGINA_SELLO_FIN = 11;
 
     const RANURAS_SELLOS_POR_PAGINA: Record<number, Array<{ xRatio: number; yRatio: number; sizeRatio: number }>> = {
-        6:  [{ xRatio: 0.35, yRatio: 0.25, sizeRatio: 0.24 }, { xRatio: 0.65, yRatio: 0.55, sizeRatio: 0.24 }],
+        6:  [{ xRatio: 0.35, yRatio: 0.25, sizeRatio: 0.24, }, { xRatio: 0.65, yRatio: 0.55, sizeRatio: 0.24 }],
         7:  [{ xRatio: 0.35, yRatio: 0.25, sizeRatio: 0.24 }, { xRatio: 0.65, yRatio: 0.55, sizeRatio: 0.24 }],
         8:  [{ xRatio: 0.35, yRatio: 0.25, sizeRatio: 0.24 }, { xRatio: 0.65, yRatio: 0.55, sizeRatio: 0.24 }],
         9:  [{ xRatio: 0.35, yRatio: 0.25, sizeRatio: 0.24 }, { xRatio: 0.65, yRatio: 0.55, sizeRatio: 0.24 }],
@@ -963,10 +964,10 @@ import Footer from '../components/Footer.astro';
         margin: 0 0 -5 0;
     }
 
-    .passport-header p {
+    .profile-header p {
         color: hsl(0, 0%, 24%);
-        font-size: 1.05rem;
-        max-width: 620px;
+        font-size: 1.2rem;
+        max-width: 680px;
         margin: 0 auto;
     }
 
