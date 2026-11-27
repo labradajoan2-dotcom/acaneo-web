@@ -46,7 +46,6 @@ const PUERTAS_PC = [
 ];
 
 // Coordenadas porcentuales para Móvil (Adviento Movil.jpg)
-// Pásame la imagen móvil para calibrar estos porcentajes exactos
 const PUERTAS_MOVIL = [
     // Fila 1 (1, 2, 3, 4, 5, 6)
     { dia: 1,  top: '45.8%', left: '9.5%',  width: '13.5%', height: '7.6%' },
@@ -168,6 +167,32 @@ const PUERTAS_MOVIL = [
                 </a>
             </div>
         </dialog>
+
+        <!-- Modal para vincular pasaporte cuando es cuenta anónima o sin pasaporte -->
+        <dialog id="linkPassportModal" class="reward-modal">
+            <div class="modal-card">
+                <button type="button" id="closeLinkPassportModal" class="close-btn" aria-label="Cerrar ventana">✕</button>
+                <div class="modal-badge">SELLO SECRETO DESBLOQUEADO</div>
+                <h2>¡5 toques en puertas cerradas!</h2>
+                <p>
+                    Ganaste un sello secreto. Introduce tu número de pasaporte para añadirlo o 
+                    <a href="/pasaporte" class="inline-link"> créate uno aquí</a>.
+                </p>
+                <form id="linkPassportForm" class="link-passport-form">
+                    <input
+                        type="text"
+                        id="linkPassportInput"
+                        placeholder="Ej. ALD-1234"
+                        autocomplete="off"
+                        required
+                    />
+                    <button type="submit" id="linkPassportSubmitBtn" class="download-btn">
+                        Añadir sello a mi pasaporte
+                    </button>
+                </form>
+                <p id="linkPassportFeedback" class="link-feedback" hidden></p>
+            </div>
+        </dialog>
     </main>
 
 </Layout>
@@ -186,6 +211,30 @@ const PUERTAS_MOVIL = [
         publicado: boolean;
     }
 
+    interface SelloRegistrado {
+        id: string;
+        src: string;
+        pagina: number;
+        otorgadoEn?: string;
+    }
+
+    const STORAGE_KEY_PASAPORTE = 'aldan_pasaporte_activo';
+    const PAGINA_SELLO_INICIO = 6;
+    const PAGINA_SELLO_FIN = 11;
+    const RANURAS_SELLOS_POR_PAGINA: Record<number, Array<{ xRatio: number; yRatio: number; sizeRatio: number }>> = {
+        6:  [{ xRatio: 0.35, yRatio: 0.25, sizeRatio: 0.24 }, { xRatio: 0.65, yRatio: 0.55, sizeRatio: 0.24 }],
+        7:  [{ xRatio: 0.35, yRatio: 0.25, sizeRatio: 0.24 }, { xRatio: 0.65, yRatio: 0.55, sizeRatio: 0.24 }],
+        8:  [{ xRatio: 0.35, yRatio: 0.25, sizeRatio: 0.24 }, { xRatio: 0.65, yRatio: 0.55, sizeRatio: 0.24 }],
+        9:  [{ xRatio: 0.35, yRatio: 0.25, sizeRatio: 0.24 }, { xRatio: 0.65, yRatio: 0.55, sizeRatio: 0.24 }],
+        10: [{ xRatio: 0.35, yRatio: 0.25, sizeRatio: 0.24 }, { xRatio: 0.65, yRatio: 0.55, sizeRatio: 0.24 }],
+        11: [{ xRatio: 0.35, yRatio: 0.25, sizeRatio: 0.24 }, { xRatio: 0.65, yRatio: 0.55, sizeRatio: 0.24 }],
+    };
+
+    const META_TOQUES_CERRADAS = 5;
+    const SELLO_SECRETO_ID = 'adviento-cinco-toques-cerradas';
+    const SELLO_SECRETO_SRC = '/pasaporte/sellos/sello-insistente.png';
+    const SELLO_SECRETO_GRANTED_KEY = 'aldan_sello_adviento_5_toques_otorgado';
+
     const modal = document.getElementById('rewardModal') as HTMLDialogElement | null;
     const closeBtn = document.getElementById('closeRewardModal');
     const modalBadge = document.getElementById('modalBadge');
@@ -196,13 +245,64 @@ const PUERTAS_MOVIL = [
     const modalDownloadBtn = document.getElementById('modalDownloadBtn') as HTMLAnchorElement | null;
     const progressCount = document.getElementById('progressCount');
 
+    const linkModal = document.getElementById('linkPassportModal') as HTMLDialogElement | null;
+    const closeLinkModalBtn = document.getElementById('closeLinkPassportModal');
+    const linkForm = document.getElementById('linkPassportForm') as HTMLFormElement | null;
+    const linkInput = document.getElementById('linkPassportInput') as HTMLInputElement | null;
+    const linkSubmitBtn = document.getElementById('linkPassportSubmitBtn') as HTMLButtonElement | null;
+    const linkFeedback = document.getElementById('linkPassportFeedback');
+
     let currentUserId: string | null = null;
     let diasAbiertos: number[] = [];
     const recompensasCache = new Map<number, Recompensa>();
     const ANIO = 2026;
 
+    let toquesCerradasGlobales = 0;
+    let selloYaOtorgado = false;
+    let selloPendiente: { id: string; src: string; pagina?: number } | null = null;
+
+    function mostrarModalSeguro(
+        dlg: HTMLDialogElement | null,
+        badge: string,
+        titulo: string,
+        texto: string
+    ) {
+        if (modalBadge) modalBadge.textContent = badge;
+        if (modalTitle) modalTitle.textContent = titulo;
+        if (modalDesc) modalDesc.textContent = texto;
+        if (modalMediaBox) modalMediaBox.style.display = 'none';
+        if (modalDownloadBtn) modalDownloadBtn.style.display = 'none';
+
+        if (!dlg) {
+            alert(`${titulo}\n\n${texto}`);
+            return;
+        }
+
+        try {
+            if (typeof dlg.showModal === 'function') {
+                if (!dlg.open) dlg.showModal();
+            } else {
+                dlg.setAttribute('open', '');
+            }
+        } catch {
+            dlg.setAttribute('open', '');
+        }
+    }
+
+    function cerrarModalSeguro(dlg: HTMLDialogElement | null) {
+        if (!dlg) return;
+        try {
+            if (typeof dlg.close === 'function') {
+                if (dlg.open) dlg.close();
+            } else {
+                dlg.removeAttribute('open');
+            }
+        } catch {
+            dlg.removeAttribute('open');
+        }
+    }
+
     function diaYaDisponible(dia: number): boolean {
-        // Fecha de hoy en horario de Madrid
         const [y, m, d] = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' })
             .format(new Date())
             .split('-')
@@ -213,38 +313,302 @@ const PUERTAS_MOVIL = [
         return m === 12 && d >= dia;
     }
 
-    // 1. Sesión anónima silenciosa + carga de recompensas y progreso
-    async function initAdviento() {
-        const { data: { session } } = await supabase.auth.getSession();
-
-        if (session?.user) {
-            currentUserId = session.user.id;
-        } else {
-            const { data } = await supabase.auth.signInAnonymously();
-            currentUserId = data.user?.id ?? null;
-        }
-
-        const [recompensasRes, progresoRes] = await Promise.all([
-            supabase.from('adviento_recompensas').select('*').order('dia', { ascending: true }),
-            currentUserId
-                ? supabase.from('adviento_progreso').select('dias_abiertos').eq('user_id', currentUserId).maybeSingle()
-                : Promise.resolve({ data: null })
-        ]);
-
-        if (recompensasRes.data) {
-            recompensasRes.data.forEach((item: Recompensa) => {
-                recompensasCache.set(item.dia, item);
-            });
-        }
-
-        if (progresoRes.data?.dias_abiertos) {
-            diasAbiertos = progresoRes.data.dias_abiertos;
-        }
-
-        actualizarUI();
+    function esPuertaAbierta(dia: number): boolean {
+        const recompensa = recompensasCache.get(dia);
+        return Boolean(recompensa?.publicado && diaYaDisponible(dia));
     }
 
-    // 2. Actualizar luces y estrellas en ambos escenarios (PC y Móvil)
+    function leerPasaporteActivo(): any | null {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY_PASAPORTE);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            const codigo = parsed?.numero_pasaporte?.trim().toUpperCase();
+            if (!codigo || codigo === 'ALD-XXXX') return null;
+            return { ...parsed, numero_pasaporte: codigo };
+        } catch {
+            return null;
+        }
+    }
+
+    function guardarPasaporteActivo(data: any) {
+        try {
+            localStorage.setItem(STORAGE_KEY_PASAPORTE, JSON.stringify(data));
+        } catch {}
+    }
+
+    function revisarSelloYaOtorgado(): boolean {
+        if (selloYaOtorgado) return true;
+        try {
+            if (localStorage.getItem(SELLO_SECRETO_GRANTED_KEY) === 'true') {
+                selloYaOtorgado = true;
+                return true;
+            }
+        } catch {}
+        return false;
+    }
+
+    function marcarSelloOtorgado() {
+        selloYaOtorgado = true;
+        selloPendiente = null;
+        try {
+            localStorage.setItem(SELLO_SECRETO_GRANTED_KEY, 'true');
+        } catch {}
+    }
+
+    function elegirPaginaSelloDisponible(
+        sellosActuales: SelloRegistrado[],
+        paginaDeseada?: number
+    ): number {
+        if (
+            typeof paginaDeseada === 'number' &&
+            paginaDeseada >= PAGINA_SELLO_INICIO &&
+            paginaDeseada <= PAGINA_SELLO_FIN
+        ) {
+            return paginaDeseada;
+        }
+        for (let p = PAGINA_SELLO_INICIO; p <= PAGINA_SELLO_FIN; p++) {
+            const countEnPag = sellosActuales.filter((s) => Number(s.pagina) === p).length;
+            const capacidad = RANURAS_SELLOS_POR_PAGINA[p]?.length ?? 2;
+            if (countEnPag < capacidad) return p;
+        }
+        return PAGINA_SELLO_INICIO;
+    }
+
+    function limpiarTokensAuthExpiradosEnStorage() {
+    try {
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (!k) continue;
+            if (k.startsWith('sb-') && k.endsWith('-auth-token')) {
+                keysToRemove.push(k);
+            }
+        }
+        keysToRemove.forEach((k) => localStorage.removeItem(k));
+    } catch {
+        // Ignorar si localStorage no está disponible
+    }
+}
+
+async function prepararSesionSupabaseSinJwtVencido() {
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const ahoraSeg = Math.floor(Date.now() / 1000);
+        if (session.expires_at && session.expires_at <= ahoraSeg + 30) {
+            const { error } = await supabase.auth.refreshSession();
+            if (error) {
+                await supabase.auth.signOut({ scope: 'local' });
+                limpiarTokensAuthExpiradosEnStorage();
+            }
+        }
+    } catch {
+        await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+        limpiarTokensAuthExpiradosEnStorage();
+    }
+}
+
+async function agregarSelloAPasaporte(params: {
+    numeroPasaporte: string;
+    id: string;
+    src: string;
+    pagina?: number;
+}): Promise<boolean> {
+    const targetPasaporte = params.numeroPasaporte.trim().toUpperCase();
+    if (!targetPasaporte || targetPasaporte === 'ALD-XXXX') return false;
+
+    await prepararSesionSupabaseSinJwtVencido();
+
+    let { data: filaDb, error: selectErr } = await supabase
+        .from('pasaportes_aldaneros')
+        .select('numero_pasaporte, nombre, email, foto_url, sellos, created_at')
+        .ilike('numero_pasaporte', targetPasaporte)
+        .maybeSingle();
+
+    if (selectErr?.message?.toLowerCase().includes('jwt expired')) {
+        await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+        limpiarTokensAuthExpiradosEnStorage();
+        ({ data: filaDb, error: selectErr } = await supabase
+            .from('pasaportes_aldaneros')
+            .select('numero_pasaporte, nombre, email, foto_url, sellos, created_at')
+            .ilike('numero_pasaporte', targetPasaporte)
+            .maybeSingle());
+    }
+
+    if (selectErr || !filaDb?.numero_pasaporte) {
+        console.warn('No se encontró el pasaporte en pasaportes_aldaneros:', selectErr?.message);
+        return false;
+    }
+
+    const sellosActuales: SelloRegistrado[] = Array.isArray(filaDb.sellos)
+        ? [...filaDb.sellos]
+        : [];
+    const paginaAsignada = elegirPaginaSelloDisponible(sellosActuales, params.pagina);
+
+    const yaTiene = sellosActuales.some(
+        (s) => s.id === params.id && Number(s.pagina) === paginaAsignada
+    );
+
+    if (!yaTiene) {
+        sellosActuales.push({
+            id: params.id,
+            src: params.src,
+            pagina: paginaAsignada,
+            otorgadoEn: new Date().toISOString(),
+        });
+    }
+
+    let { data: actualizada, error: updateErr } = await supabase
+        .from('pasaportes_aldaneros')
+        .update({ sellos: sellosActuales })
+        .eq('numero_pasaporte', filaDb.numero_pasaporte)
+        .select('numero_pasaporte, sellos')
+        .maybeSingle();
+
+    if (updateErr?.message?.toLowerCase().includes('jwt expired')) {
+        await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+        limpiarTokensAuthExpiradosEnStorage();
+        ({ data: actualizada, error: updateErr } = await supabase
+            .from('pasaportes_aldaneros')
+            .update({ sellos: sellosActuales })
+            .eq('numero_pasaporte', filaDb.numero_pasaporte)
+            .select('numero_pasaporte, sellos')
+            .maybeSingle());
+    }
+
+    if (updateErr || !actualizada) {
+        console.warn(
+            'No se pudo persistir sellos en pasaportes_aldaneros:',
+            updateErr?.message || 'sin fila actualizada (revisa política RLS de UPDATE)'
+        );
+        return false;
+    }
+
+    const sellosGuardados = Array.isArray(actualizada.sellos)
+        ? actualizada.sellos
+        : sellosActuales;
+
+    const localActual = leerPasaporteActivo();
+    guardarPasaporteActivo({
+        ...(localActual || {}),
+        ...filaDb,
+        numero_pasaporte: filaDb.numero_pasaporte.toUpperCase(),
+        sellos: sellosGuardados,
+    });
+
+    return true;
+}
+
+    function mostrarFeedbackLink(msg: string) {
+        if (!linkFeedback) return;
+        linkFeedback.textContent = msg;
+        linkFeedback.hidden = false;
+    }
+
+    function abrirModalVincularPasaporte(sello: { id: string; src: string; pagina?: number }) {
+        selloPendiente = sello;
+        if (linkFeedback) linkFeedback.hidden = true;
+        if (linkInput) linkInput.value = '';
+        if (linkModal) {
+            try {
+                if (typeof linkModal.showModal === 'function') {
+                    if (!linkModal.open) linkModal.showModal();
+                } else {
+                    linkModal.setAttribute('open', '');
+                }
+            } catch {
+                linkModal.setAttribute('open', '');
+            }
+            linkInput?.focus();
+        } else {
+            const codigo = window.prompt('¡5 toques en puertas cerradas! Introduce tu número de pasaporte:');
+            if (codigo) {
+                void agregarSelloAPasaporte({ numeroPasaporte: codigo, ...sello }).then((ok) => {
+                    if (ok) {
+                        marcarSelloOtorgado();
+                        mostrarModalSeguro(
+                            modal,
+                            '¡SELLO ESTAMPADO!',
+                            '¡Sello añadido a tu pasaporte!',
+                            `Tu sello secreto ya quedó guardado en el pasaporte ${codigo.trim().toUpperCase()}.`
+                        );
+                    }
+                });
+            }
+        }
+    }
+
+    async function procesarRecompensaCincoToques(diaTocada: number) {
+        const sello = {
+            id: SELLO_SECRETO_ID,
+            src: SELLO_SECRETO_SRC,
+            pagina: undefined,
+        };
+
+        function elegirPaginaSelloDisponible(
+    sellosActuales: SelloRegistrado[],
+    paginaDeseada?: number
+): number {
+    const maxPorPagina = 2;
+
+    if (
+        typeof paginaDeseada === 'number' &&
+        paginaDeseada >= PAGINA_SELLO_INICIO &&
+        paginaDeseada <= PAGINA_SELLO_FIN
+    ) {
+        const ocupadosDeseada = sellosActuales.filter((s) => Number(s.pagina) === paginaDeseada).length;
+        if (ocupadosDeseada < maxPorPagina) {
+            return paginaDeseada;
+        }
+    }
+
+    for (let p = PAGINA_SELLO_INICIO; p <= PAGINA_SELLO_FIN; p++) {
+        const countEnPag = sellosActuales.filter((s) => Number(s.pagina) === p).length;
+        const capacidad = RANURAS_SELLOS_POR_PAGINA[p]?.length ?? maxPorPagina;
+        if (countEnPag < capacidad) return p;
+    }
+
+    return PAGINA_SELLO_INICIO;
+}
+
+        const pasaporteSesion = leerPasaporteActivo();
+        if (pasaporteSesion?.numero_pasaporte) {
+            const ok = await agregarSelloAPasaporte({
+                numeroPasaporte: pasaporteSesion.numero_pasaporte,
+                ...sello,
+            });
+
+            if (ok) {
+                marcarSelloOtorgado();
+                mostrarModalSeguro(
+                    modal,
+                    '¡SELLO SECRETO!',
+                    '¡Sello añadido a tu pasaporte!',
+                    `Insististe 5 veces en puertas cerradas y el sello se añadió automáticamente a tu pasaporte ${pasaporteSesion.numero_pasaporte}.`
+                );
+                return;
+            }
+        }
+
+        abrirModalVincularPasaporte(sello);
+    }
+
+    async function registrarToquePuertaCerrada(dia: number): Promise<boolean> {
+        if (revisarSelloYaOtorgado()) return false;
+
+        toquesCerradasGlobales += 1;
+        console.log(`[Adviento] Toque en puerta cerrada #${toquesCerradasGlobales}/${META_TOQUES_CERRADAS} (día ${dia})`);
+
+        if (toquesCerradasGlobales === META_TOQUES_CERRADAS) {
+            await procesarRecompensaCincoToques(dia);
+            return true;
+        }
+
+        return false;
+    }
+
     function actualizarUI() {
         if (progressCount) {
             progressCount.textContent = String(diasAbiertos.length);
@@ -254,7 +618,7 @@ const PUERTAS_MOVIL = [
             const dia = Number((door as HTMLElement).dataset.dia);
             const recompensa = recompensasCache.get(dia);
 
-           if (recompensa?.publicado && diaYaDisponible(dia)) {
+            if (recompensa?.publicado && diaYaDisponible(dia)) {
                 door.classList.add('is-available');
             }
             if (diasAbiertos.includes(dia)) {
@@ -263,7 +627,6 @@ const PUERTAS_MOVIL = [
         });
     }
 
-    // 3. Registrar día abierto en Supabase
     async function registrarProgreso(dia: number) {
         if (!currentUserId || diasAbiertos.includes(dia)) return;
 
@@ -282,59 +645,153 @@ const PUERTAS_MOVIL = [
             );
     }
 
-    // 4. Evento de clic en cualquier puerta
     document.querySelectorAll('.circus-door').forEach((door) => {
         door.addEventListener('click', async () => {
             const dia = Number((door as HTMLElement).dataset.dia);
-            if (!modal || !modalBadge || !modalTitle || !modalDesc || !modalMediaBox || !modalImage || !modalDownloadBtn) return;
-
             const recompensa = recompensasCache.get(dia);
 
-            // Caso A: Aún no publicado en Supabase
-            if (!recompensa || !recompensa.publicado || !diaYaDisponible(dia)) {
-                modalBadge.textContent = `PUERTA ${dia} DE 25`;
-                modalTitle.textContent = '¡Todavía cerrada!';
-                modalDesc.textContent = `La sorpresa del día ${dia} aún se está preparando tras bambalinas en la carpa de Aldán. ¡Vuelve pronto para abrirla!`;
-                modalMediaBox.style.display = 'none';
-                modalDownloadBtn.style.display = 'none';
-                modal.showModal();
+            if (!esPuertaAbierta(dia)) {
+                const disparoRecompensa = await registrarToquePuertaCerrada(dia);
+                if (disparoRecompensa) return;
+
+                mostrarModalSeguro(
+                    modal,
+                    `PUERTA ${dia} DE 25`,
+                    '¡Todavía cerrada!',
+                    `La sorpresa del día ${dia} aún se está preparando tras bambalinas en la carpa de Aldán. ¡Vuelve pronto para abrirla!`
+                );
                 return;
             }
 
-            // Caso B: Recompensa disponible -> mostrar y guardar progreso
-            modalBadge.textContent = `${recompensa.subtitulo || 'REGALO'} • DÍA ${dia}`;
-            modalTitle.textContent = recompensa.titulo;
-            modalDesc.textContent = recompensa.descripcion || '';
+            if (!recompensa) return;
 
-            if (recompensa.imagen_url) {
-                modalImage.src = recompensa.imagen_url;
-                modalImage.alt = recompensa.titulo;
-                modalMediaBox.style.display = 'flex';
-            } else {
-                modalMediaBox.style.display = 'none';
+            if (modalBadge) modalBadge.textContent = `${recompensa.subtitulo || 'REGALO'} • DÍA ${dia}`;
+            if (modalTitle) modalTitle.textContent = recompensa.titulo;
+            if (modalDesc) modalDesc.textContent = recompensa.descripcion || '';
+
+            if (modalMediaBox && modalImage) {
+                if (recompensa.imagen_url) {
+                    modalImage.src = recompensa.imagen_url;
+                    modalImage.alt = recompensa.titulo;
+                    modalMediaBox.style.display = 'flex';
+                } else {
+                    modalMediaBox.style.display = 'none';
+                }
             }
 
-            if (recompensa.descarga_url) {
-                modalDownloadBtn.href = recompensa.descarga_url;
-                modalDownloadBtn.textContent = recompensa.texto_boton || 'Descargar recompensa';
-                modalDownloadBtn.style.display = 'inline-block';
-            } else {
-                modalDownloadBtn.style.display = 'none';
+            if (modalDownloadBtn) {
+                if (recompensa.descarga_url) {
+                    modalDownloadBtn.href = recompensa.descarga_url;
+                    modalDownloadBtn.textContent = recompensa.texto_boton || 'Descargar recompensa';
+                    modalDownloadBtn.style.display = 'inline-block';
+                } else {
+                    modalDownloadBtn.style.display = 'none';
+                }
             }
 
-            modal.showModal();
+            if (modal) {
+                try {
+                    if (typeof modal.showModal === 'function') {
+                        if (!modal.open) modal.showModal();
+                    } else {
+                        modal.setAttribute('open', '');
+                    }
+                } catch {
+                    modal.setAttribute('open', '');
+                }
+            }
+
             await registrarProgreso(dia);
         });
     });
 
-    closeBtn?.addEventListener('click', () => modal?.close());
-    modal?.addEventListener('click', (e) => {
-        if (e.target === modal) modal.close();
+    linkForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!linkInput || !linkSubmitBtn || !selloPendiente) return;
+
+        const codigo = linkInput.value.trim().toUpperCase();
+        if (!codigo) return;
+
+        linkSubmitBtn.disabled = true;
+        linkSubmitBtn.textContent = 'Añadiendo sello...';
+        if (linkFeedback) linkFeedback.hidden = true;
+
+        try {
+            const ok = await agregarSelloAPasaporte({
+                numeroPasaporte: codigo,
+                ...selloPendiente,
+            });
+
+            if (!ok) {
+                mostrarFeedbackLink('No encontramos un pasaporte con ese código. Revísalo o crea uno en /pasaporte.');
+                return;
+            }
+
+            marcarSelloOtorgado();
+            cerrarModalSeguro(linkModal);
+            mostrarModalSeguro(
+                modal,
+                '¡SELLO ESTAMPADO!',
+                '¡Sello añadido a tu pasaporte!',
+                `Tu sello secreto ya quedó guardado en el pasaporte ${codigo}.`
+            );
+        } catch {
+            mostrarFeedbackLink('Ocurrió un error al añadir el sello. Inténtalo de nuevo.');
+        } finally {
+            linkSubmitBtn.disabled = false;
+            linkSubmitBtn.textContent = 'Añadir sello a mi pasaporte';
+        }
     });
 
-    initAdviento();
-    </script> //
+    closeBtn?.addEventListener('click', () => cerrarModalSeguro(modal));
+    modal?.addEventListener('click', (e) => {
+        if (e.target === modal) cerrarModalSeguro(modal);
+    });
 
+    closeLinkModalBtn?.addEventListener('click', () => cerrarModalSeguro(linkModal));
+    linkModal?.addEventListener('click', (e) => {
+        if (e.target === linkModal) cerrarModalSeguro(linkModal);
+    });
+
+    async function initAdviento() {
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+
+            if (session?.user) {
+                currentUserId = session.user.id;
+            } else {
+                const { data } = await supabase.auth.signInAnonymously();
+                currentUserId = data.user?.id ?? null;
+            }
+
+            const [recompensasRes, progresoRes] = await Promise.all([
+                supabase.from('adviento_recompensas').select('*').order('dia', { ascending: true }),
+                currentUserId
+                    ? supabase.from('adviento_progreso').select('dias_abiertos').eq('user_id', currentUserId).maybeSingle()
+                    : Promise.resolve({ data: null })
+            ]);
+
+            if (recompensasRes.data) {
+                recompensasRes.data.forEach((item: Recompensa) => {
+                    recompensasCache.set(item.dia, item);
+                });
+            }
+
+            if (progresoRes.data?.dias_abiertos) {
+                diasAbiertos = progresoRes.data.dias_abiertos;
+            }
+
+            actualizarUI();
+        } catch (err) {
+            console.warn('Error inicializando adviento:', err);
+        }
+    }
+
+    initAdviento();
+</script>
+```[cite: 2, 3]
+
+Si al tocar 5 puertas cerradas sigue sin mostrarse ni el modal ni el formulario, abre la consola (`F12` → **Console**) y dime qué mensaje aparece al tocar; con eso vemos al instante si es un bloqueo de RLS en `pasaportes_aldaneros` o un detalle del navegador.
 
 <style>
     .advent-page {
@@ -546,6 +1003,44 @@ const PUERTAS_MOVIL = [
         margin: 0 0 1.4rem 0;
     }
 
+    .inline-link {
+        color: #29b7ef;
+        font-weight: 700;
+        text-decoration: underline;
+    }
+
+    .link-passport-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+        align-items: center;
+    }
+
+    .link-passport-form input {
+        width: 100%;
+        max-width: 280px;
+        background: #0b0b0e;
+        border: 1px solid #32323e;
+        border-radius: 12px;
+        padding: 0.75rem 0.9rem;
+        color: #ffffff;
+        font-size: 1rem;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .link-passport-form input:focus {
+        outline: none;
+        border-color: #29b7ef;
+    }
+
+    .link-feedback {
+        margin: 0.75rem 0 0 0 !important;
+        font-size: 0.88rem !important;
+        color: #ffd0be !important;
+    }
+
     .download-btn {
         display: inline-block;
         background: #14b3ee;
@@ -553,7 +1048,9 @@ const PUERTAS_MOVIL = [
         text-decoration: none;
         font-weight: 800;
         padding: 0.85rem 1.8rem;
+        border: none;
         border-radius: 999px;
+        cursor: pointer;
         transition: transform 0.2s, background-color 0.2s;
     }
 

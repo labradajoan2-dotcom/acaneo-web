@@ -18,7 +18,47 @@ const { title } = Astro.props;
 	</head>
 	<body>
 		<slot />
-		
+		<!-- Pop-up global de sello desbloqueado (mismo estilo que en Adviento) -->
+		<dialog id="tourRewardModal" class="tour-reward-modal">
+			<div class="tour-modal-card">
+				<button type="button" id="closeTourRewardModal" class="tour-close-btn" aria-label="Cerrar ventana">✕</button>
+				<div class="tour-modal-badge" id="tourModalBadge">¡SELLO SECRETO!</div>
+				<h2 id="tourModalTitle">¡Sello añadido a tu pasaporte!</h2>
+				<p id="tourModalDesc">
+					Visitaste todas las páginas en una sola sesión y el sello se añadió a tu pasaporte.
+				</p>
+				<a href="/perfil" id="tourModalProfileBtn" class="tour-action-btn">Ver en mi pasaporte</a>
+			</div>
+		</dialog>
+
+		<!-- Modal para vincular pasaporte si está en sesión anónima o sin pasaporte -->
+		<dialog id="tourLinkPassportModal" class="tour-reward-modal">
+			<div class="tour-modal-card">
+				<button type="button" id="closeTourLinkModal" class="tour-close-btn" aria-label="Cerrar ventana">✕</button>
+				<div class="tour-modal-badge">¡NUEVO SELLO DESBLOQUEADO!</div>
+				<h2>¡Recorrido completo en una sesión!</h2>
+				<p>
+					Ganaste el sello por visitar todas las páginas en una sola sesión. Introduce tu número de pasaporte para añadirlo o
+					<a href="/pasaporte" class="tour-inline-link">créate uno aquí</a>.
+				</p>
+				<form id="tourLinkPassportForm" class="tour-link-form">
+					<input
+						type="text"
+						id="tourLinkPassportInput"
+						placeholder="Ej. ALD-1234"
+						autocomplete="off"
+						required
+					/>
+					<button type="submit" id="tourLinkPassportSubmitBtn" class="tour-action-btn">
+						Añadir sello a mi pasaporte
+					</button>
+				</form>
+				<p id="tourLinkPassportFeedback" class="tour-link-feedback" hidden></p>
+			</div>
+		</dialog>
+
+
+
 		<script>
 			declare global {
 				interface Window {
@@ -72,6 +112,146 @@ const { title } = Astro.props;
 					observer.observe(section);
 				});
 			});
+
+			
+
+			import {
+        registrarVisitaYComprobarTour,
+        estamparSelloTourEnPasaporte,
+		} from '../lib/selloTourSesion';
+
+		const tourModal = document.getElementById('tourRewardModal') as HTMLDialogElement | null;
+		const closeTourModal = document.getElementById('closeTourRewardModal');
+		const tourModalBadge = document.getElementById('tourModalBadge');
+		const tourModalTitle = document.getElementById('tourModalTitle');
+		const tourModalDesc = document.getElementById('tourModalDesc');
+
+		const tourLinkModal = document.getElementById('tourLinkPassportModal') as HTMLDialogElement | null;
+		const closeTourLinkModal = document.getElementById('closeTourLinkModal');
+		const tourLinkForm = document.getElementById('tourLinkPassportForm') as HTMLFormElement | null;
+		const tourLinkInput = document.getElementById('tourLinkPassportInput') as HTMLInputElement | null;
+		const tourLinkSubmitBtn = document.getElementById('tourLinkPassportSubmitBtn') as HTMLButtonElement | null;
+		const tourLinkFeedback = document.getElementById('tourLinkPassportFeedback');
+
+		function abrirDialogo(dlg: HTMLDialogElement | null) {
+			if (!dlg) return;
+			if (typeof dlg.showModal === 'function') {
+				if (!dlg.open) dlg.showModal();
+			} else {
+				dlg.setAttribute('open', '');
+			}
+		}
+
+		function cerrarDialogo(dlg: HTMLDialogElement | null) {
+			if (!dlg) return;
+			if (typeof dlg.close === 'function') {
+				if (dlg.open) dlg.close();
+			} else {
+				dlg.removeAttribute('open');
+			}
+		}
+
+		function mostrarPopupSelloDesbloqueado(badge: string, titulo: string, descripcion: string) {
+			if (tourModalBadge) tourModalBadge.textContent = badge;
+			if (tourModalTitle) tourModalTitle.textContent = titulo;
+			if (tourModalDesc) tourModalDesc.textContent = descripcion;
+			abrirDialogo(tourModal);
+		}
+
+		window.addEventListener('aldan:sello-tour-desbloqueado', (event: Event) => {
+			const customEvent = event as CustomEvent<{
+				automatico?: boolean;
+				numeroPasaporte?: string | null;
+			}>;
+			const detalle = customEvent.detail;
+
+			if (detalle?.automatico && detalle.numeroPasaporte) {
+				mostrarPopupSelloDesbloqueado(
+					'¡SELLO SECRETO!',
+					'¡Sello añadido a tu pasaporte!',
+					`Visitaste todas las páginas en una sola sesión y el sello se añadió automáticamente a tu pasaporte ${detalle.numeroPasaporte}.`
+				);
+				return;
+			}
+
+			if (tourLinkFeedback) tourLinkFeedback.hidden = true;
+			if (tourLinkInput) tourLinkInput.value = '';
+			abrirDialogo(tourLinkModal);
+			tourLinkInput?.focus();
+		});
+
+		tourLinkForm?.addEventListener('submit', async (e) => {
+			e.preventDefault();
+			if (!tourLinkInput || !tourLinkSubmitBtn) return;
+
+			const codigo = tourLinkInput.value.trim().toUpperCase();
+			if (!codigo) return;
+
+			tourLinkSubmitBtn.disabled = true;
+			tourLinkSubmitBtn.textContent = 'Añadiendo sello...';
+			if (tourLinkFeedback) tourLinkFeedback.hidden = true;
+
+			try {
+				const ok = await estamparSelloTourEnPasaporte(codigo);
+				if (!ok) {
+					if (tourLinkFeedback) {
+						tourLinkFeedback.textContent =
+							'No encontramos un pasaporte con ese código. Revísalo o crea uno en /pasaporte.';
+						tourLinkFeedback.hidden = false;
+					}
+					return;
+				}
+
+				try {
+					sessionStorage.setItem('aldan_sello_tour_sesion_otorgado', 'true');
+				} catch {}
+
+				cerrarDialogo(tourLinkModal);
+				mostrarPopupSelloDesbloqueado(
+					'¡SELLO ESTAMPADO!',
+					'¡Sello añadido a tu pasaporte!',
+					`Tu sello de explorador ya quedó guardado en el pasaporte ${codigo}.`
+				);
+			} catch {
+				if (tourLinkFeedback) {
+					tourLinkFeedback.textContent = 'Ocurrió un error al añadir el sello. Inténtalo de nuevo.';
+					tourLinkFeedback.hidden = false;
+				}
+			} finally {
+				tourLinkSubmitBtn.disabled = false;
+				tourLinkSubmitBtn.textContent = 'Añadir sello a mi pasaporte';
+			}
+		});
+
+				closeTourModal?.addEventListener('click', () => cerrarDialogo(tourModal));
+				tourModal?.addEventListener('click', (e) => {
+					if (e.target === tourModal) cerrarDialogo(tourModal);
+				});
+
+				closeTourLinkModal?.addEventListener('click', () => cerrarDialogo(tourLinkModal));
+				tourLinkModal?.addEventListener('click', (e) => {
+					if (e.target === tourLinkModal) cerrarDialogo(tourLinkModal);
+				});
+
+				function ejecutarComprobacionTour() {
+					void registrarVisitaYComprobarTour(({ pasaporteActivo, estampadoAutomatico }) => {
+						window.dispatchEvent(
+							new CustomEvent('aldan:sello-tour-desbloqueado', {
+								detail: {
+									automatico: estampadoAutomatico && Boolean(pasaporteActivo?.numero_pasaporte),
+									numeroPasaporte: pasaporteActivo?.numero_pasaporte ?? null,
+								},
+							})
+						);
+					});
+				}
+
+				ejecutarComprobacionTour();
+				document.addEventListener('astro:page-load', ejecutarComprobacionTour);
+
+			
+
+
 		</script>
 
 		<style is:global>
@@ -114,6 +294,144 @@ const { title } = Astro.props;
 			.fade-in-section.is-visible {
 				opacity: 1;
 				transform: translateY(0);
+			}
+
+			.tour-reward-modal {
+				position: fixed;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				margin: 0;
+				border: none;
+				background: transparent;
+				padding: 0;
+				width: 92%;
+				max-width: 490px;
+				z-index: 9999;
+			}
+
+			.tour-reward-modal::backdrop {
+				background: rgba(11, 11, 14, 0.84);
+				backdrop-filter: blur(6px);
+			}
+
+			.tour-modal-card {
+				position: relative;
+				background: #141418;
+				border: 2px solid #14b3ee;
+				border-radius: 24px;
+				padding: 2.2rem 1.8rem;
+				text-align: center;
+				color: #ffffff;
+				box-shadow: 0 25px 50px rgba(0, 0, 0, 0.85);
+				animation: tourPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+			}
+
+			@keyframes tourPopIn {
+				from { opacity: 0; transform: scale(0.92); }
+				to { opacity: 1; transform: scale(1); }
+			}
+
+			.tour-close-btn {
+				position: absolute;
+				top: 1rem;
+				right: 1rem;
+				width: 36px;
+				height: 36px;
+				border-radius: 50%;
+				background: #0b0b0e;
+				border: 1px solid #333;
+				color: #a0a0a5;
+				font-size: 1rem;
+				cursor: pointer;
+			}
+
+			.tour-close-btn:hover {
+				background: #d82d2d;
+				color: #ffffff;
+				border-color: #d82d2d;
+			}
+
+			.tour-modal-badge {
+				display: inline-block;
+				background: hsla(45, 90%, 67%, 0);
+				color: #ffffff;
+				font-size: 0.75rem;
+				font-weight: 800;
+				padding: 0.25rem 0.85rem;
+				border-radius: 999px;
+				letter-spacing: 1px;
+				margin-bottom: 0.6rem;
+			}
+
+			.tour-modal-card h2 {
+				font-family: var(--font-title, sans-serif);
+				font-size: 1.9rem;
+				color: #ffffff;
+				margin: 0 0 1rem 0;
+			}
+
+			.tour-modal-card p {
+				color: #e0e0e5;
+				font-size: 1rem;
+				line-height: 1.6;
+				margin: 0 0 1.4rem 0;
+			}
+
+			.tour-inline-link {
+				color: #29b7ef;
+				font-weight: 700;
+				text-decoration: underline;
+			}
+
+			.tour-link-form {
+				display: flex;
+				flex-direction: column;
+				gap: 0.85rem;
+				align-items: center;
+			}
+
+			.tour-link-form input {
+				width: 100%;
+				max-width: 280px;
+				background: #0b0b0e;
+				border: 1px solid #32323e;
+				border-radius: 12px;
+				padding: 0.75rem 0.9rem;
+				color: #ffffff;
+				font-size: 1rem;
+				text-align: center;
+				text-transform: uppercase;
+				letter-spacing: 1px;
+			}
+
+			.tour-link-form input:focus {
+				outline: none;
+				border-color: #29b7ef;
+			}
+
+			.tour-link-feedback {
+				margin: 0.75rem 0 0 0 !important;
+				font-size: 0.88rem !important;
+				color: #ffd0be !important;
+			}
+
+			.tour-action-btn {
+				display: inline-block;
+				background: #14b3ee;
+				color: #ffffff;
+				text-decoration: none;
+				font-weight: 800;
+				padding: 0.85rem 1.8rem;
+				border: none;
+				border-radius: 999px;
+				cursor: pointer;
+				transition: transform 0.2s, background-color 0.2s;
+			}
+
+			.tour-action-btn:hover {
+				background: #ff8552;
+				transform: translateY(-2px);
 			}
 		</style>
 	</body>
